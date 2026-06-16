@@ -84,11 +84,21 @@ if (pathname === "/api/dahmer") {
 
     const html = await r.text();
 
-    return res.end(
-      JSON.stringify({
-        preview: html.slice(0, 5000)
-      })
-    );
+    const matches = [
+  ...html.matchAll(
+    /data-name="([^"]+)"/g
+  )
+]
+.map(m => m[1])
+.filter(name =>
+  name.toLowerCase().includes("matrix")
+);
+
+return res.end(
+  JSON.stringify({
+    matches
+  })
+);
   } catch (e) {
     return res.end(
       JSON.stringify({
