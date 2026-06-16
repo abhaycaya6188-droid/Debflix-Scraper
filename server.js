@@ -73,32 +73,38 @@ http
 
 if (pathname === "/api/dahmer") {
   try {
-    const r = await fetch(
-      "https://a.111477.xyz/movies/",
-      {
-        headers: {
-          "User-Agent": "Mozilla/5.0"
-        }
-      }
+    const tmdbKey = process.env.TMDB_API_KEY;
+
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/movie/603?api_key=${tmdbKey}`
     );
 
-    const html = await r.text();
+    const movie = await tmdbRes.json();
 
-    const matches = [
-  ...html.matchAll(
-    /data-name="([^"]+)"/g
-  )
-]
-.map(m => m[1])
-.filter(name =>
-  name.toLowerCase().includes("matrix")
-);
+    const year =
+      movie.release_date.split("-")[0];
 
-return res.end(
-  JSON.stringify({
-    matches
-  })
-);
+    const folderName =
+      `${movie.title} (${year})`;
+
+    const folderUrl =
+      `https://a.111477.xyz/movies/${encodeURIComponent(folderName)}/`;
+
+    const dirRes = await fetch(folderUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
+    const html = await dirRes.text();
+
+    return res.end(
+      JSON.stringify({
+        folderName,
+        status: dirRes.status,
+        preview: html.slice(0, 1000)
+      })
+    );
   } catch (e) {
     return res.end(
       JSON.stringify({
