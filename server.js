@@ -114,6 +114,12 @@ return res.end(JSON.stringify({
   preview: html.slice(0, 2000)
 }));
 
+return res.end(JSON.stringify({
+  title,
+  folderUrl,
+  preview: html.slice(0, 2000)
+}));
+
     const files = [
       ...html.matchAll(
         /href=['"]([^'"]+\.(?:mkv|mp4|avi|webm))['"]/gi
