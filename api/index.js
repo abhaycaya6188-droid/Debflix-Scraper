@@ -136,3 +136,13 @@ module.exports = async function handler(req, res) {
     res.end(JSON.stringify({ error: err.message }));
   }
 };
+(async () => {
+  try {
+    const url = await getStream(1399, 1, 1);
+    console.log("PLAYLIST URL:");
+    console.log(url);
+  } catch (e) {
+    console.error("TEST ERROR:");
+    console.error(e);
+  }
+})();
