@@ -98,13 +98,17 @@ if (pathname === "/api/dahmer") {
 
     const html = await dirRes.text();
 
-    return res.end(
-      JSON.stringify({
-        folderName,
-        status: dirRes.status,
-        preview: html.slice(0, 1000)
-      })
-    );
+    const matches = [
+  ...html.matchAll(/href=['"]([^'"]+)['"]/gi)
+].slice(0, 50);
+
+return res.end(
+  JSON.stringify({
+    folderName,
+    status: dirRes.status,
+    matches
+  })
+);
   } catch (e) {
     return res.end(
       JSON.stringify({
