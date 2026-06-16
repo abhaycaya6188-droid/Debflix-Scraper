@@ -147,6 +147,89 @@ if (pathname === "/api/dahmer") {
     );
   }
 }
+
+    if (pathname === "/api/dahmer-tv") {
+  try {
+    const query = url.parse(req.url, true).query;
+
+    const id = query.id;
+    const season = query.season || "1";
+    const episode = query.episode;
+
+    if (!id) {
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Missing TMDB id"
+        })
+      );
+    }
+
+    const tmdbKey = process.env.TMDB_API_KEY;
+
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/tv/${id}?api_key=${tmdbKey}`
+    );
+
+    const show = await tmdbRes.json();
+
+    const title = show.name
+      ?.replace(/[:]/g, "")
+      .replace(/[?]/g, "")
+      .replace(/[']/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const seasonUrl =
+      `https://a.111477.xyz/tvs/${encodeURIComponent(title)}/Season%20${season}/`;
+
+    const seasonRes = await fetch(seasonUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
+    const html = await seasonRes.text();
+
+    const files = [
+      ...html.matchAll(
+        /href=['"]([^'"]+\.(?:mkv|mp4|avi|webm))['"]/gi
+      ),
+    ].map(m => decodeURIComponent(m[1]));
+
+    let matchedFiles = files;
+
+    if (episode) {
+      const tag =
+        `S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}`;
+
+      matchedFiles = files.filter(file =>
+        file.includes(tag)
+      );
+    }
+
+    const streams = matchedFiles.map(file => ({
+      provider: "Dahmer",
+      quality:
+        file.match(/(2160p|1080p|720p)/i)?.[0] || "Auto",
+      url: `https://a.111477.xyz${file}`
+    }));
+
+    return res.end(
+      JSON.stringify({
+        success: true,
+        streams
+      })
+    );
+  } catch (e) {
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error: e.message
+      })
+    );
+  }
+}
     return vidlinkHandler(req, res);
   })
   .listen(port, () => {
