@@ -73,22 +73,39 @@ http
 
 if (pathname === "/api/dahmer") {
   try {
+    const id = url.parse(req.url, true).query.id;
+
+    if (!id) {
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Missing TMDB id"
+        })
+      );
+    }
+
     const tmdbKey = process.env.TMDB_API_KEY;
 
     const tmdbRes = await fetch(
-      `https://api.themoviedb.org/3/movie/603?api_key=${tmdbKey}`
+      `https://api.themoviedb.org/3/movie/${id}?api_key=${tmdbKey}`
     );
 
     const movie = await tmdbRes.json();
 
-    const year =
-      movie.release_date.split("-")[0];
+    const title = movie.title
+      ?.replace(/[:]/g, "")
+      .replace(/[?]/g, "")
+      .replace(/[']/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
-    const folderName =
-      `${movie.title} (${year})`;
+    const year =
+      movie.release_date?.split("-")[0];
 
     const folderUrl =
-      `https://a.111477.xyz/movies/${encodeURIComponent(folderName)}/`;
+      `https://a.111477.xyz/movies/${encodeURIComponent(
+        `${title} (${year})`
+      )}/`;
 
     const dirRes = await fetch(folderUrl, {
       headers: {
@@ -98,20 +115,33 @@ if (pathname === "/api/dahmer") {
 
     const html = await dirRes.text();
 
-    const matches = [
-  ...html.matchAll(/href=['"]([^'"]+)['"]/gi)
-].slice(0, 50);
+    const regex =
+      /href=['"]([^'"]+\.(?:mkv|mp4|avi|webm))['"]/gi;
 
-return res.end(
-  JSON.stringify({
-    folderName,
-    status: dirRes.status,
-    matches
-  })
-);
+    const streams = [];
+
+    for (const match of html.matchAll(regex)) {
+      const file = decodeURIComponent(match[1]);
+
+      streams.push({
+        provider: "Dahmer",
+        quality:
+          file.match(/(2160p|1080p|720p)/i)?.[0] ||
+          "Auto",
+        url: `https://a.111477.xyz${file}`
+      });
+    }
+
+    return res.end(
+      JSON.stringify({
+        success: true,
+        streams
+      })
+    );
   } catch (e) {
     return res.end(
       JSON.stringify({
+        success: false,
         error: e.message
       })
     );
