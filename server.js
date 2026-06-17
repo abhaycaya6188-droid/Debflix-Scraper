@@ -7,6 +7,14 @@ const port = process.env.PORT || 3000;
 
 http
   .createServer(async (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+res.setHeader("Access-Control-Allow-Headers", "*");
+res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+
+if (req.method === "OPTIONS") {
+  res.statusCode = 200;
+  return res.end();
+}
     const pathname = url.parse(req.url).pathname;
 
     if (pathname === "/api/test-dahmer-folder") {
