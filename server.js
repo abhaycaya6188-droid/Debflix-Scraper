@@ -1,3 +1,5 @@
+
+console.log("RAILWAY FORCE REBUILD");
 const http = require("http");
 const url = require("url");
 
