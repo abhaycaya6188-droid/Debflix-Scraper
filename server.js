@@ -103,8 +103,8 @@ if (req.method === "OPTIONS") {
     const html = await embedRes.text();
 
     const playlistMatch = html.match(
-      /url:\s*'([^']+playlist\/\d+)'/
-    );
+  /url:\s*'([^']+playlist[^']*)'/
+);
 
     const tokenMatch = html.match(
       /'token':\s*'([^']+)'/
