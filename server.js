@@ -127,8 +127,11 @@ if (req.method === "OPTIONS") {
       );
     }
 
-    const stream =
-      `${playlistMatch[1]}?token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
+    const separator =
+  playlistMatch[1].includes("?") ? "&" : "?";
+
+const stream =
+  `${playlistMatch[1]}${separator}token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
     return res.end(
       JSON.stringify({
