@@ -47,40 +47,105 @@ if (req.method === "OPTIONS") {
       }
     }
 
-    if (pathname === "/api/test-vixsrc") {
+    if (pathname === "/api/vixsrc") {
   try {
-    const r = await fetch(
-      "https://vixsrc.to/api/movie/603",
-      {
-        headers: {
-          Referer: "https://vixsrc.to/",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-          Accept:
-            "application/json,text/plain,*/*",
-        },
+    const query = url.parse(req.url, true).query;
+
+    const id = query.id;
+    const season = query.s;
+    const episode = query.e;
+
+    if (!id) {
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Missing TMDB id"
+        })
+      );
+    }
+
+    let apiUrl;
+
+    if (season && episode) {
+      apiUrl = `https://vixsrc.to/api/tv/${id}/${season}/${episode}`;
+    } else {
+      apiUrl = `https://vixsrc.to/api/movie/${id}`;
+    }
+
+    const apiRes = await fetch(apiUrl, {
+      headers: {
+        Referer: "https://vixsrc.to/",
+        "User-Agent": "Mozilla/5.0"
       }
+    });
+
+    const apiJson = await apiRes.json();
+
+    if (!apiJson?.src) {
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "No src returned"
+        })
+      );
+    }
+
+    const embedUrl =
+      "https://vixsrc.to" + apiJson.src;
+
+    const embedRes = await fetch(embedUrl, {
+      headers: {
+        Referer: "https://vixsrc.to/",
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
+    const html = await embedRes.text();
+
+    const playlistMatch = html.match(
+      /url:\s*'([^']+playlist\/\d+)'/
     );
 
-    const text = await r.text();
+    const tokenMatch = html.match(
+      /'token':\s*'([^']+)'/
+    );
 
-    res.setHeader("Content-Type", "application/json");
+    const expiresMatch = html.match(
+      /'expires':\s*'([^']+)'/
+    );
+
+    if (
+      !playlistMatch ||
+      !tokenMatch ||
+      !expiresMatch
+    ) {
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Failed extracting playlist"
+        })
+      );
+    }
+
+    const stream =
+      `${playlistMatch[1]}?token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
     return res.end(
       JSON.stringify({
-        status: r.status,
-        preview: text.slice(0, 500),
+        success: true,
+        provider: "VixSrc",
+        stream
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
-        error: e.message,
+        success: false,
+        error: e.message
       })
     );
   }
 }
-
 if (pathname === "/api/dahmer") {
   try {
     const id = url.parse(req.url, true).query.id;
