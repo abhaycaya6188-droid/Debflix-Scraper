@@ -134,7 +134,7 @@ const stream =
   `${playlistMatch[1]}${separator}token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
     const proxied =
-  `http://80.225.229.106:3000/api/test-playlist?url=${encodeURIComponent(stream)}`;
+  `https://debflix-flame.vercel.app/api/vixsrc-proxy?url=${encodeURIComponent(stream)}`;
 
 return res.end(
   JSON.stringify({
