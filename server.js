@@ -133,13 +133,16 @@ if (req.method === "OPTIONS") {
 const stream =
   `${playlistMatch[1]}${separator}token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
-    return res.end(
-      JSON.stringify({
-        success: true,
-        provider: "VixSrc",
-        stream
-      })
-    );
+    const proxied =
+  `http://80.225.229.106:3000/api/test-playlist?url=${encodeURIComponent(stream)}`;
+
+return res.end(
+  JSON.stringify({
+    success: true,
+    provider: "VixSrc",
+    stream: proxied
+  })
+);
   } catch (e) {
     return res.end(
       JSON.stringify({
