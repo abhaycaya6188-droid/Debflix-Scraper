@@ -331,9 +331,9 @@ if (pathname === "/api/test-playlist") {
    const text = await r.text();
 
 const rewritten = text.replace(
-  /https:\/\/vixsrc\.to\/playlist[^\s"]+/g,
-  (match) =>
-    `http://80.225.229.106:3000/api/test-video?url=${encodeURIComponent(match)}`
+  /https:\/\/vixsrc\.to\/playlist[^\n\r"]+/g,
+  match =>
+    `https://debflix-flame.vercel.app/api/vixsrc-proxy?url=${encodeURIComponent(match)}`
 );
 
 res.setHeader(
