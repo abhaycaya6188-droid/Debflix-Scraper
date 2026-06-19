@@ -328,14 +328,21 @@ if (pathname === "/api/test-playlist") {
       }
     });
 
-    const text = await r.text();
+   const text = await r.text();
 
-    res.setHeader(
-      "Content-Type",
-      "text/plain"
-    );
+const rewritten = text.replace(
+  /https:\/\/vixsrc\.to\/playlist[^\n\r"]+/g,
+  match =>
+    `http://80.225.229.106:3000/api/test-video?url=${encodeURIComponent(match)}`
+);
 
-    return res.end(text);
+res.setHeader(
+  "Content-Type",
+  "application/vnd.apple.mpegurl"
+);
+
+return res.end(rewritten);
+
   } catch (e) {
     return res.end(e.message);
   }
