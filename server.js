@@ -337,7 +337,36 @@ if (pathname === "/api/test-playlist") {
     return res.end(e.message);
   }
 }
-    return vidlinkHandler(req, res);
+ 
+if (pathname === "/api/test-video") {
+  try {
+    const videoUrl =
+      url.parse(req.url, true).query.url;
+
+    const r = await fetch(
+      decodeURIComponent(videoUrl),
+      {
+        headers: {
+          Referer: "https://vixsrc.to/",
+          "User-Agent": "Mozilla/5.0"
+        }
+      }
+    );
+
+    const text = await r.text();
+
+    res.setHeader(
+      "Content-Type",
+      "text/plain"
+    );
+
+    return res.end(text);
+  } catch (e) {
+    return res.end(e.message);
+  }
+}
+
+return vidlinkHandler(req, res);
   })
   .listen(port, () => {
     console.log(`Server running on port ${port}`);
