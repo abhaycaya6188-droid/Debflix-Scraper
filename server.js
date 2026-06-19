@@ -308,6 +308,35 @@ if (pathname === "/api/dahmer") {
     );
   }
 }
+
+if (pathname === "/api/test-playlist") {
+  try {
+    const playlistUrl =
+      url.parse(req.url, true).query.url;
+
+    if (!playlistUrl) {
+      return res.end("missing url");
+    }
+
+    const r = await fetch(playlistUrl, {
+      headers: {
+        Referer: "https://vixsrc.to/",
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
+    const text = await r.text();
+
+    res.setHeader(
+      "Content-Type",
+      "text/plain"
+    );
+
+    return res.end(text);
+  } catch (e) {
+    return res.end(e.message);
+  }
+}
     return vidlinkHandler(req, res);
   })
   .listen(port, () => {
