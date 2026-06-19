@@ -331,8 +331,8 @@ if (pathname === "/api/test-playlist") {
    const text = await r.text();
 
 const rewritten = text.replace(
-  /https:\/\/vixsrc\.to\/playlist[^\n\r"]+/g,
-  match =>
+  /https:\/\/vixsrc\.to\/playlist[^\s"]+/g,
+  (match) =>
     `https://debflix-flame.vercel.app/api/vixsrc-proxy?url=${encodeURIComponent(match)}`
 );
 
