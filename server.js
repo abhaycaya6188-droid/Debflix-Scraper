@@ -314,17 +314,24 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const epRes = await fetch(
-      "https://net52.cc/mobile/episodes.php?s=80077209&series=80057281&page=1"
+    const playerRes = await fetch(
+      "https://tv.imgcdn.kim/newtv/player.php?id=80077368",
+      {
+        headers: {
+          Ott: "nf",
+          "X-Requested-With": "NetmirrorNewTV v1.0",
+        },
+      }
     );
 
-    const epData = await epRes.json();
+    const player = await playerRes.json();
 
     return res.end(
       JSON.stringify({
         success: true,
-        count: epData.episodes?.length || 0,
-        firstEpisode: epData.episodes?.[0]
+        video_link: player.video_link,
+        referer: player.referer,
+        ott: player.ott
       })
     );
   } catch (e) {
