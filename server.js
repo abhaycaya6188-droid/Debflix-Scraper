@@ -318,6 +318,7 @@ if (pathname === "/api/netmirror") {
     const query = url.parse(req.url, true).query;
 
     const title = query.title;
+    const season = query.season || "1";
 
     const searchRes = await fetch(
       `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`
@@ -343,14 +344,35 @@ if (pathname === "/api/netmirror") {
     const details =
       await detailsRes.json();
 
+    const seasonObj =
+      details.season?.find(s =>
+        s.s.includes(`Season ${season}`)
+      );
+
+    if (!seasonObj) {
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Season not found"
+        })
+      );
+    }
+
+    const epRes = await fetch(
+      `https://net52.cc/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`
+    );
+
+    const epData =
+      await epRes.json();
+
     return res.end(
       JSON.stringify({
         success: true,
-        title: first.t,
-        seasons:
-          details.season?.length || 0,
-        firstSeason:
-          details.season?.[0] || null
+        season: seasonObj.s,
+        count:
+          epData.episodes?.length || 0,
+        first:
+          epData.episodes?.[0] || null
       })
     );
   } catch (e) {
@@ -362,7 +384,6 @@ if (pathname === "/api/netmirror") {
     );
   }
 }
-
 
 if (pathname === "/api/test-key") {
   try {
