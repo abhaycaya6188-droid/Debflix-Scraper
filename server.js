@@ -318,21 +318,25 @@ if (pathname === "/api/netmirror") {
     const { execSync } = require("child_process");
 
     const result = execSync(
-      "curl --version",
-      { encoding: "utf8" }
+      "curl --tlsv1.2 -I https://api.themoviedb.org",
+      {
+        encoding: "utf8"
+      }
     );
 
     return res.end(
       JSON.stringify({
         success: true,
-        result: result.slice(0, 300)
+        result
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        message: e.message
+        message: e.message,
+        stdout: e.stdout?.toString(),
+        stderr: e.stderr?.toString()
       })
     );
   }
