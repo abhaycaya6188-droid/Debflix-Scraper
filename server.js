@@ -314,16 +314,18 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const searchRes = await fetch(
-      "https://tv.imgcdn.kim/newtv/search.php?s=Stranger%20Things"
+    const postRes = await fetch(
+      "https://tv.imgcdn.kim/newtv/post.php?id=80057281"
     );
 
-    const search = await searchRes.json();
+    const post = await postRes.json();
 
     return res.end(
       JSON.stringify({
         success: true,
-        first: search.searchResult?.[0]
+        title: post.title,
+        seasons: post.season?.length || 0,
+        firstSeason: post.season?.[0]
       })
     );
   } catch (e) {
