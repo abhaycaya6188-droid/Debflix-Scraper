@@ -325,11 +325,32 @@ if (pathname === "/api/netmirror") {
 
     const search = await searchRes.json();
 
+    const first =
+      search.searchResult?.[0];
+
+    if (!first) {
+      return res.end(
+        JSON.stringify({
+          success: false
+        })
+      );
+    }
+
+    const detailsRes = await fetch(
+      `https://tv.imgcdn.kim/newtv/post.php?id=${first.id}`
+    );
+
+    const details =
+      await detailsRes.json();
+
     return res.end(
       JSON.stringify({
         success: true,
-        count: search.searchResult?.length || 0,
-        first: search.searchResult?.[0] || null
+        title: first.t,
+        seasons:
+          details.season?.length || 0,
+        firstSeason:
+          details.season?.[0] || null
       })
     );
   } catch (e) {
@@ -341,6 +362,8 @@ if (pathname === "/api/netmirror") {
     );
   }
 }
+
+
 if (pathname === "/api/test-key") {
   try {
     const r = await fetch(
