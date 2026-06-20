@@ -317,25 +317,24 @@ if (pathname === "/api/netmirror") {
     const { execSync } = require("child_process");
 
     const output = execSync(
-      `curl -v "https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}"`,
-      {
-        encoding: "utf8"
-      }
-    );
+      `curl --tlsv1.2 -s "https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}"`
+    ).toString();
+
+    const tmdb = JSON.parse(output);
 
     return res.end(
       JSON.stringify({
         success: true,
-        output: output.slice(0, 2000)
+        title: tmdb.name,
+        source: "curl-tls12"
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        stdout: e.stdout?.toString(),
-        stderr: e.stderr?.toString(),
-        message: e.message
+        message: e.message,
+        stderr: e.stderr?.toString()
       })
     );
   }
