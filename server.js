@@ -332,14 +332,14 @@ if (pathname === "/api/netmirror") {
         success: true,
         video_link: player.video_link,
         referer: player.referer,
-        ott: player.ott
+        ott: player.ott,
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        error: e.message
+        error: e.message,
       })
     );
   }
