@@ -314,48 +314,35 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const tmdbRes = await fetch(
-  `https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}`
-);
+    const r = await fetch(
+      "https://api.themoviedb.org/3/tv/66732?api_key=7bf6b8cf4d8a661e8a90ae825995471d",
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        }
+      }
+    );
 
-const tmdb = await tmdbRes.json();
+    const text = await r.text();
 
-const searchRes = await fetch(
-  `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(
-    tmdb.name
-  )}`
-);
-
-const search = await searchRes.json();
-
-const first = search.searchResult?.[0];
-
-const postRes = await fetch(
-  `https://tv.imgcdn.kim/newtv/post.php?id=${first.id}`
-);
-
-const post = await postRes.json();
-
-return res.end(
-  JSON.stringify({
-    success: true,
-    title: post.title,
-    seasons: post.season?.length || 0,
-    firstSeason: post.season?.[0]
-  })
-);
+    return res.end(
+      JSON.stringify({
+        success: true,
+        status: r.status,
+        body: text.slice(0, 300)
+      })
+    );
   } catch (e) {
-  return res.end(
-    JSON.stringify({
-      success: false,
-      step: "tmdb",
-      message: e.message,
-      cause: e.cause?.message,
-      code: e.cause?.code,
-      stack: String(e)
-    })
-  );
-}
+    return res.end(
+      JSON.stringify({
+        success: false,
+        message: e.message,
+        cause: e.cause?.message,
+        code: e.cause?.code
+      })
+    );
+  }
 }
 
 if (pathname === "/api/test-key") {
