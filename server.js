@@ -318,29 +318,18 @@ if (pathname === "/api/netmirror") {
       `https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}`
     );
 
-    const tmdb = await tmdbRes.json();
-
-    const searchRes = await fetch(
-      `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(
-        tmdb.name
-      )}`
-    );
-
-    const searchText = await searchRes.text();
-
     return res.end(
       JSON.stringify({
         success: true,
-        tmdbTitle: tmdb.name,
-        status: searchRes.status,
-        body: searchText.slice(0, 1000),
+        tmdbStatus: tmdbRes.status
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        error: e.message,
+        step: "tmdb",
+        error: e.message
       })
     );
   }
