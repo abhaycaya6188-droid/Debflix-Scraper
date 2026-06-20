@@ -330,13 +330,15 @@ if (pathname === "/api/netmirror") {
       })
     );
   } catch (e) {
-    return res.end(
-      JSON.stringify({
-        success: false,
-        error: e.message,
-      })
-    );
-  }
+  return res.end(
+    JSON.stringify({
+      success: false,
+      message: e.message,
+      stdout: e.stdout?.toString(),
+      stderr: e.stderr?.toString(),
+    })
+  );
+}
 }
 
 if (pathname === "/api/test-key") {
