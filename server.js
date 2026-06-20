@@ -312,6 +312,33 @@ if (pathname === "/api/dahmer") {
   }
 }
 
+if (pathname === "/api/test-key") {
+  try {
+    const r = await fetch(
+      "https://sc-u7-01.vix-content.net/storage/enc.key",
+      {
+        headers: {
+          Referer: "https://vixsrc.to/",
+          "User-Agent": "Mozilla/5.0"
+        }
+      }
+    );
+
+    const buf = Buffer.from(
+      await r.arrayBuffer()
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/octet-stream"
+    );
+
+    return res.end(buf);
+  } catch (e) {
+    return res.end(e.message);
+  }
+}
+
 if (pathname === "/api/test-playlist") {
   try {
     const playlistUrl =
@@ -330,10 +357,15 @@ if (pathname === "/api/test-playlist") {
 
    const text = await r.text();
 
-const rewritten = text.replace(
+let rewritten = text.replace(
   /https:\/\/vixsrc\.to\/playlist[^\s"]+/g,
   (match) =>
     `https://reviewing-upload-ready-components.trycloudflare.com/api/test-playlist?url=${encodeURIComponent(match)}`
+);
+
+rewritten = rewritten.replace(
+  /URI="\/storage\/enc\.key"/g,
+  `URI="https://reviewing-upload-ready-components.trycloudflare.com/api/test-key"`
 );
 
 res.setHeader(
