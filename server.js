@@ -350,15 +350,22 @@ if (pathname === "/api/netmirror") {
       );
 
     if (!seasonObj) {
-      return res.end(
-        JSON.stringify({
-          success: false,
-          error: "Season not found"
-        })
-      );
-    }
+  return res.end(
+    JSON.stringify({
+      success: false,
+      error: "Season not found"
+    })
+  );
+}
 
-   const firstEpisode =
+const epRes = await fetch(
+  `https://net52.cc/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`
+);
+
+const epData =
+  await epRes.json();
+
+const firstEpisode =
   epData.episodes?.[0];
 
 const playerRes = await fetch(
