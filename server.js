@@ -320,11 +320,20 @@ if (pathname === "/api/netmirror") {
 
     const tmdb = await tmdbRes.json();
 
+    const searchRes = await fetch(
+      `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(
+        tmdb.name
+      )}`
+    );
+
+    const searchText = await searchRes.text();
+
     return res.end(
       JSON.stringify({
         success: true,
-        title: tmdb.name,
-        year: tmdb.first_air_date,
+        tmdbTitle: tmdb.name,
+        status: searchRes.status,
+        body: searchText.slice(0, 1000),
       })
     );
   } catch (e) {
