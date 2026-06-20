@@ -333,7 +333,7 @@ if (pathname === "/api/test-playlist") {
 const rewritten = text.replace(
   /https:\/\/vixsrc\.to\/playlist[^\s"]+/g,
   (match) =>
-    `https://debflix-flame.vercel.app/api/vixsrc-proxy?url=${encodeURIComponent(match)}`
+    `https://reviewing-upload-ready-components.trycloudflare.com/api/test-playlist?url=${encodeURIComponent(match)}`
 );
 
 res.setHeader(
