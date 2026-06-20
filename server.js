@@ -317,22 +317,22 @@ if (pathname === "/api/netmirror") {
   try {
     const { execSync } = require("child_process");
 
-    const result = execSync("which curl", {
-      encoding: "utf8"
-    });
+    const result = execSync(
+      "curl --version",
+      { encoding: "utf8" }
+    );
 
     return res.end(
       JSON.stringify({
         success: true,
-        result
+        result: result.slice(0, 300)
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        message: e.message,
-        code: e.code
+        message: e.message
       })
     );
   }
