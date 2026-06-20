@@ -315,52 +315,31 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const query = url.parse(req.url, true).query;
-
-    const tmdbId = query.id;
-    const type = query.type || "movie";
-
-    if (!tmdbId) {
-      return res.end(
-        JSON.stringify({
-          success: false,
-          error: "Missing id"
-        })
-      );
-    }
-
-    const endpoint =
-      type === "tv"
-        ? `https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_API_KEY}`
-        : `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}`;
-
-    const tmdbRes = await fetch(endpoint, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    const playerRes = await fetch(
+      "https://tv.imgcdn.kim/newtv/player.php?id=80077368",
+      {
+        headers: {
+          Ott: "nf",
+          "X-Requested-With": "NetmirrorNewTV v1.0",
+        },
       }
-    });
+    );
 
-    const tmdb = await tmdbRes.json();
+    const player = await playerRes.json();
 
     return res.end(
       JSON.stringify({
         success: true,
-        title:
-          type === "tv"
-            ? tmdb.name
-            : tmdb.title,
-        original:
-          type === "tv"
-            ? tmdb.original_name
-            : tmdb.original_title
+        video_link: player.video_link,
+        referer: player.referer,
+        ott: player.ott,
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        error: e.message
+        error: e.message,
       })
     );
   }
