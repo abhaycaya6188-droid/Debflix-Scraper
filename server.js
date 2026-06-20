@@ -2,6 +2,7 @@ const TMDB_API_KEY = "7bf6b8cf4d8a661e8a90ae825995471d";
 console.log("RAILWAY FORCE REBUILD");
 const http = require("http");
 const url = require("url");
+const { execSync } = require("child_process");
 
 const vidlinkHandler = require("./api/index");
 
@@ -314,31 +315,25 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const playerRes = await fetch(
-      "https://tv.imgcdn.kim/newtv/player.php?id=80077368",
-      {
-        headers: {
-          Ott: "nf",
-          "X-Requested-With": "NetmirrorNewTV v1.0",
-        },
-      }
+    const tmdbText = execSync(
+      'curl --tlsv1.2 -s "https://api.themoviedb.org/3/tv/66732?api_key=7bf6b8cf4d8a661e8a90ae825995471d"',
+      { encoding: "utf8" }
     );
 
-    const player = await playerRes.json();
+    const tmdb = JSON.parse(tmdbText);
 
     return res.end(
       JSON.stringify({
         success: true,
-        video_link: player.video_link,
-        referer: player.referer,
-        ott: player.ott
+        title: tmdb.name,
+        original: tmdb.original_name,
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        error: e.message
+        error: e.message,
       })
     );
   }
