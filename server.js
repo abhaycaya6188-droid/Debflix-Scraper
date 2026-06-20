@@ -314,33 +314,32 @@ if (pathname === "/api/dahmer") {
 }
 
 if (pathname === "/api/netmirror") {
-  const query = url.parse(req.url, true).query;
+  try {
+    const query = url.parse(req.url, true).query;
 
-  const tmdbId = query.id;
-  const type = query.type || "movie";
+    const title = query.title;
 
-  const endpoint =
-    type === "tv"
-      ? `https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_API_KEY}`
-      : `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}`;
+    const searchRes = await fetch(
+      `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`
+    );
 
-  const tmdbRes = await fetch(endpoint);
+    const search = await searchRes.json();
 
-  const tmdb = await tmdbRes.json();
-
-  return res.end(
-    JSON.stringify({
-      success: true,
-      title:
-        type === "tv"
-          ? tmdb.name
-          : tmdb.title,
-      original:
-        type === "tv"
-          ? tmdb.original_name
-          : tmdb.original_title
-    })
-  );
+    return res.end(
+      JSON.stringify({
+        success: true,
+        count: search.searchResult?.length || 0,
+        first: search.searchResult?.[0] || null
+      })
+    );
+  } catch (e) {
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error: e.message
+      })
+    );
+  }
 }
 if (pathname === "/api/test-key") {
   try {
