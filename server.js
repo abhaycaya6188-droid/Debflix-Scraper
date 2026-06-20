@@ -358,23 +358,32 @@ if (pathname === "/api/netmirror") {
       );
     }
 
-    const epRes = await fetch(
-      `https://net52.cc/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`
-    );
+   const firstEpisode =
+  epData.episodes?.[0];
 
-    const epData =
-      await epRes.json();
+const playerRes = await fetch(
+  `https://tv.imgcdn.kim/newtv/player.php?id=${firstEpisode.id}`,
+  {
+    headers: {
+      Ott: "nf",
+      "X-Requested-With":
+        "NetmirrorNewTV v1.0",
+    },
+  }
+);
 
-    return res.end(
-      JSON.stringify({
-        success: true,
-        season: seasonObj.s,
-        count:
-          epData.episodes?.length || 0,
-        first:
-          epData.episodes?.[0] || null
-      })
-    );
+const player =
+  await playerRes.json();
+
+return res.end(
+  JSON.stringify({
+    success: true,
+    episode: firstEpisode.t,
+    video_link: player.video_link,
+    referer: player.referer,
+    ott: player.ott
+  })
+);
   } catch (e) {
     return res.end(
       JSON.stringify({
