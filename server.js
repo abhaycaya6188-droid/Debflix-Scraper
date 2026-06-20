@@ -315,28 +315,31 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const { execSync } = require("child_process");
-
-    const result = execSync(
-      "curl --tlsv1.2 -I https://api.themoviedb.org",
+    const playerRes = await fetch(
+      "https://tv.imgcdn.kim/newtv/player.php?id=80077368",
       {
-        encoding: "utf8"
+        headers: {
+          Ott: "nf",
+          "X-Requested-With": "NetmirrorNewTV v1.0",
+        },
       }
     );
+
+    const player = await playerRes.json();
 
     return res.end(
       JSON.stringify({
         success: true,
-        result
+        video_link: player.video_link,
+        referer: player.referer,
+        ott: player.ott
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        message: e.message,
-        stdout: e.stdout?.toString(),
-        stderr: e.stderr?.toString()
+        error: e.message
       })
     );
   }
