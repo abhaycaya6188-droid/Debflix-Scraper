@@ -314,29 +314,30 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const query = url.parse(req.url, true).query;
+    const playerRes = await fetch(
+      "https://tv.imgcdn.kim/newtv/player.php?id=80077368",
+      {
+        headers: {
+          Ott: "nf",
+          "X-Requested-With": "NetmirrorNewTV v1.0",
+        },
+      }
+    );
 
-    const id = query.id;
-    const type = query.type || "movie";
-    const season = query.season;
-    const episode = query.episode;
+    const player = await playerRes.json();
 
-    // TEMP TEST
     return res.end(
       JSON.stringify({
         success: true,
         oracle: true,
-        id,
-        type,
-        season,
-        episode
+        player,
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        error: e.message
+        error: e.message,
       })
     );
   }
