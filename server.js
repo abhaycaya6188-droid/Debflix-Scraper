@@ -134,7 +134,7 @@ const stream =
   `${playlistMatch[1]}${separator}token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
     const proxied =
-  `https://reviewing-upload-ready-components.trycloudflare.com/api/test-playlist?url=${encodeURIComponent(stream)}`;
+  `https://macro-immigration-filters-influence.trycloudflare.com/api/test-playlist?url=${encodeURIComponent(stream)}`;
 
 return res.end(
   JSON.stringify({
@@ -312,6 +312,36 @@ if (pathname === "/api/dahmer") {
   }
 }
 
+if (pathname === "/api/netmirror") {
+  try {
+    const query = url.parse(req.url, true).query;
+
+    const id = query.id;
+    const type = query.type || "movie";
+    const season = query.season;
+    const episode = query.episode;
+
+    // TEMP TEST
+    return res.end(
+      JSON.stringify({
+        success: true,
+        oracle: true,
+        id,
+        type,
+        season,
+        episode
+      })
+    );
+  } catch (e) {
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error: e.message
+      })
+    );
+  }
+}
+
 if (pathname === "/api/test-key") {
   try {
     const r = await fetch(
@@ -357,16 +387,31 @@ if (pathname === "/api/test-playlist") {
 
    const text = await r.text();
 
-let rewritten = text.replace(
+const tunnel =
+  "https://macro-immigration-filters-influence.trycloudflare.com";
+
+let rewritten = text;
+
+// nested playlists
+rewritten = rewritten.replace(
   /https:\/\/vixsrc\.to\/playlist[^\s"]+/g,
   (match) =>
-    `https://reviewing-upload-ready-components.trycloudflare.com/api/test-playlist?url=${encodeURIComponent(match)}`
+    `${tunnel}/api/test-playlist?url=${encodeURIComponent(match)}`
 );
 
+// encryption key
 rewritten = rewritten.replace(
   /URI="\/storage\/enc\.key"/g,
-  `URI="https://reviewing-upload-ready-components.trycloudflare.com/api/test-key"`
+  `URI="${tunnel}/api/test-key"`
 );
+
+// TS fragments
+rewritten = rewritten.replace(
+  /https:\/\/sc-[^\s"]+\.ts[^\s"]*/g,
+  (match) =>
+    `${tunnel}/api/test-playlist?url=${encodeURIComponent(match)}`
+);
+
 
 res.setHeader(
   "Content-Type",
@@ -396,6 +441,25 @@ if (pathname === "/api/test-video") {
     );
 
     const text = await r.text();
+
+    const contentType =
+  r.headers.get("content-type") || "";
+
+if (
+  contentType.includes("video") ||
+  videoUrl.includes(".ts")
+) {
+  const buf = Buffer.from(
+    await r.arrayBuffer()
+  );
+
+  res.setHeader(
+    "Content-Type",
+    contentType
+  );
+
+  return res.end(buf);
+}
 
     res.setHeader(
       "Content-Type",
