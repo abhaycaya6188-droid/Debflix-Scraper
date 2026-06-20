@@ -314,32 +314,26 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const r = await fetch(
-      "https://api.themoviedb.org/3/tv/66732?api_key=7bf6b8cf4d8a661e8a90ae825995471d",
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        }
-      }
-    );
+    const { execSync } = require("child_process");
 
-    const text = await r.text();
+    const output = execSync(
+      `curl -s "https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}"`
+    ).toString();
+
+    const tmdb = JSON.parse(output);
 
     return res.end(
       JSON.stringify({
         success: true,
-        status: r.status,
-        body: text.slice(0, 300)
+        title: tmdb.name,
+        source: "curl"
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        message: e.message,
-        cause: e.cause?.message,
-        code: e.cause?.code
+        message: e.message
       })
     );
   }
