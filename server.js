@@ -314,27 +314,23 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const { execSync } = require("child_process");
+    const searchRes = await fetch(
+      "https://tv.imgcdn.kim/newtv/search.php?s=Stranger%20Things"
+    );
 
-    const output = execSync(
-      `curl --tlsv1.2 -s "https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}"`
-    ).toString();
-
-    const tmdb = JSON.parse(output);
+    const search = await searchRes.json();
 
     return res.end(
       JSON.stringify({
         success: true,
-        title: tmdb.name,
-        source: "curl-tls12"
+        first: search.searchResult?.[0]
       })
     );
   } catch (e) {
     return res.end(
       JSON.stringify({
         success: false,
-        message: e.message,
-        stderr: e.stderr?.toString()
+        error: e.message
       })
     );
   }
