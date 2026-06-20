@@ -316,13 +316,29 @@ if (pathname === "/api/dahmer") {
 if (pathname === "/api/netmirror") {
   const query = url.parse(req.url, true).query;
 
+  const tmdbId = query.id;
+  const type = query.type || "movie";
+
+  const endpoint =
+    type === "tv"
+      ? `https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_API_KEY}`
+      : `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}`;
+
+  const tmdbRes = await fetch(endpoint);
+
+  const tmdb = await tmdbRes.json();
+
   return res.end(
     JSON.stringify({
       success: true,
-      title: query.title,
-      type: query.type,
-      season: query.season,
-      episode: query.episode,
+      title:
+        type === "tv"
+          ? tmdb.name
+          : tmdb.title,
+      original:
+        type === "tv"
+          ? tmdb.original_name
+          : tmdb.original_title
     })
   );
 }
