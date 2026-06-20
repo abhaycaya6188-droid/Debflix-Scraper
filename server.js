@@ -314,6 +314,17 @@ if (pathname === "/api/dahmer") {
 }
 
 if (pathname === "/api/netmirror") {
+  const query = url.parse(req.url, true).query;
+
+return res.end(
+  JSON.stringify({
+    success: true,
+    id: query.id,
+    type: query.type,
+    season: query.season,
+    episode: query.episode
+  })
+);
   try {
     const playerRes = await fetch(
       "https://tv.imgcdn.kim/newtv/player.php?id=80077368",
