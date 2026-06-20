@@ -1,4 +1,4 @@
-
+const TMDB_API_KEY = "7bf6b8cf4d8a661e8a90ae825995471d";
 console.log("RAILWAY FORCE REBUILD");
 const http = require("http");
 const url = require("url");
@@ -314,23 +314,17 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/netmirror") {
   try {
-    const playerRes = await fetch(
-      "https://tv.imgcdn.kim/newtv/player.php?id=80077368",
-      {
-        headers: {
-          Ott: "nf",
-          "X-Requested-With": "NetmirrorNewTV v1.0",
-        },
-      }
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}`
     );
 
-    const player = await playerRes.json();
+    const tmdb = await tmdbRes.json();
 
     return res.end(
       JSON.stringify({
         success: true,
-        oracle: true,
-        player,
+        title: tmdb.name,
+        year: tmdb.first_air_date,
       })
     );
   } catch (e) {
