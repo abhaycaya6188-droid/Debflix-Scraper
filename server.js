@@ -345,14 +345,17 @@ return res.end(
   })
 );
   } catch (e) {
-    return res.end(
-      JSON.stringify({
-        success: false,
-        step: "tmdb",
-        error: e.message
-      })
-    );
-  }
+  return res.end(
+    JSON.stringify({
+      success: false,
+      step: "tmdb",
+      message: e.message,
+      cause: e.cause?.message,
+      code: e.cause?.code,
+      stack: String(e)
+    })
+  );
+}
 }
 
 if (pathname === "/api/test-key") {
