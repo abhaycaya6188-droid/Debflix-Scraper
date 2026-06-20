@@ -318,7 +318,8 @@ if (pathname === "/api/netmirror") {
     const query = url.parse(req.url, true).query;
 
     const title = query.title;
-    const season = query.season || "1";
+const season = query.season || "1";
+const episode = query.episode || "1";
 
     const searchRes = await fetch(
       `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`
@@ -365,11 +366,25 @@ const epRes = await fetch(
 const epData =
   await epRes.json();
 
-const firstEpisode =
-  epData.episodes?.[0];
+const selectedEpisode =
+  epData.episodes?.find(
+    e =>
+      String(
+        e.ep.replace("E", "")
+      ) === String(episode)
+  );
+
+if (!selectedEpisode) {
+  return res.end(
+    JSON.stringify({
+      success: false,
+      error: "Episode not found"
+    })
+  );
+}
 
 const playerRes = await fetch(
-  `https://tv.imgcdn.kim/newtv/player.php?id=${firstEpisode.id}`,
+  `https://tv.imgcdn.kim/newtv/player.php?id=${selectedEpisode.id}`,
   {
     headers: {
       Ott: "nf",
@@ -385,7 +400,7 @@ const player =
 return res.end(
   JSON.stringify({
     success: true,
-    episode: firstEpisode.t,
+    episode: selectedEpisode.t,
     video_link: player.video_link,
     referer: player.referer,
     ott: player.ott
