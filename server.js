@@ -315,15 +315,35 @@ if (pathname === "/api/dahmer") {
 if (pathname === "/api/netmirror") {
   try {
     const tmdbRes = await fetch(
-      `https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}`
-    );
+  `https://api.themoviedb.org/3/tv/66732?api_key=${TMDB_API_KEY}`
+);
 
-    return res.end(
-      JSON.stringify({
-        success: true,
-        tmdbStatus: tmdbRes.status
-      })
-    );
+const tmdb = await tmdbRes.json();
+
+const searchRes = await fetch(
+  `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(
+    tmdb.name
+  )}`
+);
+
+const search = await searchRes.json();
+
+const first = search.searchResult?.[0];
+
+const postRes = await fetch(
+  `https://tv.imgcdn.kim/newtv/post.php?id=${first.id}`
+);
+
+const post = await postRes.json();
+
+return res.end(
+  JSON.stringify({
+    success: true,
+    title: post.title,
+    seasons: post.season?.length || 0,
+    firstSeason: post.season?.[0]
+  })
+);
   } catch (e) {
     return res.end(
       JSON.stringify({
