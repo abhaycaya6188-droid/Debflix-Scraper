@@ -7,7 +7,7 @@ const http = require('http');
 
 const REFERER = 'https://vidlink.pro/';
 const ORIGIN  = 'https://vidlink.pro';
-const UA      = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124';
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
 
 // ── WASM singleton (survives warm invocations) ────────────────────────────────
 let wasmReady = false;
