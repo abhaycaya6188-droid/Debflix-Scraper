@@ -49,7 +49,21 @@ async function getStream(id, season, episode) {
     ? `https://vidlink.pro/api/b/tv/${token}/${season}/${episode || 1}?multiLang=0`
     : `https://vidlink.pro/api/b/movie/${token}?multiLang=0`;
 
-  const stream = data?.stream;
+  const res = await fetch(apiUrl, {
+  headers: {
+    Referer: REFERER,
+    Origin: ORIGIN,
+    "User-Agent": UA,
+  },
+});
+
+if (!res.ok) {
+  throw new Error(`vidlink API returned ${res.status}`);
+}
+
+const data = await res.json();
+
+const stream = data?.stream;
 
 if (!stream) {
   throw new Error("No stream in response");
@@ -60,7 +74,7 @@ if (stream.playlist) {
   return stream.playlist;
 }
 
-// Movie (MP4 qualities)
+// Movie (MP4)
 if (stream.qualities) {
   return (
     stream.qualities["1080"]?.url ||
