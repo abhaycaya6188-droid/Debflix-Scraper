@@ -177,7 +177,7 @@ module.exports = async function handler(req, res) {
 };
 (async () => {
   try {
-    const url = await getStream(1399, 1, 1);
+    const url = await getStream(94997, 2, 1);
     console.log("PLAYLIST URL:");
     console.log(url);
   } catch (e) {
