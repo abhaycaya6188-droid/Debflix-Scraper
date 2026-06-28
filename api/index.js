@@ -41,27 +41,44 @@ function bootWasm() {
 // ── Stream URL resolver ───────────────────────────────────────────────────────
 async function getStream(id, season, episode) {
   await bootWasm();
+
   const token = globalThis.getAdv(String(id));
 
-const apiUrl = season
-  ? `https://vidlink.pro/api/b/tv/${token}/${season}/${episode || 1}?multiLang=0`
-  : `https://vidlink.pro/api/b/movie/${token}?multiLang=0`;
-
-console.log(apiUrl);
-
-throw new Error(apiUrl);
-  if (!token) throw new Error('getAdv returned null');
+  if (!token) {
+    throw new Error("getAdv returned null");
+  }
 
   const apiUrl = season
     ? `https://vidlink.pro/api/b/tv/${token}/${season}/${episode || 1}?multiLang=0`
     : `https://vidlink.pro/api/b/movie/${token}?multiLang=0`;
 
+  // TEMP DEBUG
+  throw new Error(apiUrl);
+
+  // ORIGINAL CODE BELOW (disabled while debugging)
+  /*
   const res = await fetch(apiUrl, {
-    headers: { Referer: REFERER, Origin: ORIGIN, 'User-Agent': UA }
+    headers: {
+      Referer: REFERER,
+      Origin: ORIGIN,
+      "User-Agent": UA,
+    },
   });
-  if (!res.ok) throw new Error(`vidlink API returned ${res.status}`);
-  const body = await res.text();
-throw new Error(body || "Empty response");
+
+  if (!res.ok) {
+    throw new Error(`vidlink API returned ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  const playlist = data?.stream?.playlist;
+
+  if (!playlist) {
+    throw new Error("No playlist in response");
+  }
+
+  return playlist;
+  */
 }
 
 // ── HLS upstream fetcher with redirect support ────────────────────────────────
