@@ -60,11 +60,16 @@ async function getStream(id, season, episode) {
     },
   });
 
+  console.log("URL:", apiUrl);
+  console.log("STATUS:", res.status);
+  console.log("TYPE:", res.headers.get("content-type"));
+
   const body = await res.text();
 
-  throw new Error(body);
-}
+  console.log("BODY:", JSON.stringify(body));
 
+  throw new Error("STOP");
+}
 // ── HLS upstream fetcher with redirect support ────────────────────────────────
 function fetchUpstream(url, redirects = 0) {
   return new Promise((resolve, reject) => {
