@@ -52,33 +52,17 @@ async function getStream(id, season, episode) {
     ? `https://vidlink.pro/api/b/tv/${token}/${season}/${episode || 1}?multiLang=0`
     : `https://vidlink.pro/api/b/movie/${token}?multiLang=0`;
 
-  // TEMP DEBUG
-  throw new Error(apiUrl);
-
-  // ORIGINAL CODE BELOW (disabled while debugging)
-  /*
   const res = await fetch(apiUrl, {
-  headers: {
-    Referer: REFERER,
-    Origin: ORIGIN,
-    "User-Agent": UA,
-  },
-});
+    headers: {
+      Referer: REFERER,
+      Origin: ORIGIN,
+      "User-Agent": UA,
+    },
+  });
 
-throw new Error(
-  `STATUS=${res.status} TYPE=${res.headers.get("content-type")}`
-);
-
-  const data = await res.json();
-
-  const playlist = data?.stream?.playlist;
-
-  if (!playlist) {
-    throw new Error("No playlist in response");
-  }
-
-  return playlist;
-  */
+  throw new Error(
+    `STATUS=${res.status} CONTENT-TYPE=${res.headers.get("content-type")}`
+  );
 }
 
 // ── HLS upstream fetcher with redirect support ────────────────────────────────
