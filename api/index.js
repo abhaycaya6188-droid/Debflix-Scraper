@@ -61,7 +61,16 @@ if (!res.ok) {
   throw new Error(`vidlink API returned ${res.status}`);
 }
 
-const data = await res.json();
+const body = await res.text();
+
+console.log("STATUS:", res.status);
+console.log("BODY:", JSON.stringify(body));
+
+if (!body) {
+  throw new Error("EMPTY BODY");
+}
+
+const data = JSON.parse(body);
 
 const stream = data?.stream;
 
