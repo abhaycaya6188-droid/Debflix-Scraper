@@ -58,16 +58,16 @@ async function getStream(id, season, episode) {
   // ORIGINAL CODE BELOW (disabled while debugging)
   /*
   const res = await fetch(apiUrl, {
-    headers: {
-      Referer: REFERER,
-      Origin: ORIGIN,
-      "User-Agent": UA,
-    },
-  });
+  headers: {
+    Referer: REFERER,
+    Origin: ORIGIN,
+    "User-Agent": UA,
+  },
+});
 
-  if (!res.ok) {
-    throw new Error(`vidlink API returned ${res.status}`);
-  }
+throw new Error(
+  `STATUS=${res.status} TYPE=${res.headers.get("content-type")}`
+);
 
   const data = await res.json();
 
