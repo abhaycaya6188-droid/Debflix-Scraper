@@ -60,9 +60,9 @@ async function getStream(id, season, episode) {
     },
   });
 
-  throw new Error(
-    `STATUS=${res.status} CONTENT-TYPE=${res.headers.get("content-type")}`
-  );
+  const body = await res.text();
+
+  throw new Error(body);
 }
 
 // ── HLS upstream fetcher with redirect support ────────────────────────────────
