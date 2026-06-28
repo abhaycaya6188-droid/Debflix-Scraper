@@ -43,10 +43,7 @@ async function getStream(id, season, episode) {
   await bootWasm();
 
   const token = globalThis.getAdv(String(id));
-
-  if (!token) {
-    throw new Error("getAdv returned null");
-  }
+  if (!token) throw new Error("getAdv returned null");
 
   const apiUrl = season
     ? `https://vidlink.pro/api/b/tv/${token}/${season}/${episode || 1}?multiLang=0`
@@ -60,15 +57,19 @@ async function getStream(id, season, episode) {
     },
   });
 
-  console.log("URL:", apiUrl);
-  console.log("STATUS:", res.status);
-  console.log("TYPE:", res.headers.get("content-type"));
+  if (!res.ok) {
+    throw new Error(`vidlink API returned ${res.status}`);
+  }
 
-  const body = await res.text();
+  const data = await res.json();
 
-  console.log("BODY:", JSON.stringify(body));
+  const playlist = data?.stream?.playlist;
 
-  throw new Error("STOP");
+  if (!playlist) {
+    throw new Error("No playlist in response");
+  }
+
+  return playlist;
 }
 // ── HLS upstream fetcher with redirect support ────────────────────────────────
 function fetchUpstream(url, redirects = 0) {
