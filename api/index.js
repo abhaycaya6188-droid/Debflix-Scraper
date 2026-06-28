@@ -42,6 +42,8 @@ function bootWasm() {
 async function getStream(id, season, episode) {
   await bootWasm();
   const token = globalThis.getAdv(String(id));
+
+throw new Error(token);
   if (!token) throw new Error('getAdv returned null');
 
   const apiUrl = season
