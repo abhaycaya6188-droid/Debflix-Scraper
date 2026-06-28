@@ -43,7 +43,9 @@ async function getStream(id, season, episode) {
   await bootWasm();
 
   const token = globalThis.getAdv(String(id));
+  console.log(token);
   if (!token) throw new Error("getAdv returned null");
+
 
   const apiUrl = season
     ? `https://vidlink.pro/api/b/tv/${token}/${season}/${episode || 1}?multiLang=0`
