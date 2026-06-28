@@ -49,36 +49,28 @@ async function getStream(id, season, episode) {
     ? `https://vidlink.pro/api/b/tv/${token}/${season}/${episode || 1}?multiLang=0`
     : `https://vidlink.pro/api/b/movie/${token}?multiLang=0`;
 
-  const res = await fetch(apiUrl, {
-  headers: {
-    Referer: REFERER,
-    Origin: ORIGIN,
-    "User-Agent": UA,
-  },
-});
+  const stream = data?.stream;
 
-if (!res.ok) {
-  throw new Error(`vidlink API returned ${res.status}`);
+if (!stream) {
+  throw new Error("No stream in response");
 }
 
-const body = await res.text();
-
-console.log("TV BODY:");
-console.log(JSON.stringify(body));
-
-throw new Error("STOP");
-
-if (!qualities) {
-  throw new Error("No qualities in response");
+// TV (HLS)
+if (stream.playlist) {
+  return stream.playlist;
 }
 
-// Prefer highest quality
-return (
-  qualities["1080"]?.url ||
-  qualities["720"]?.url ||
-  qualities["480"]?.url ||
-  Object.values(qualities)[0]?.url
-);
+// Movie (MP4 qualities)
+if (stream.qualities) {
+  return (
+    stream.qualities["1080"]?.url ||
+    stream.qualities["720"]?.url ||
+    stream.qualities["480"]?.url ||
+    Object.values(stream.qualities)[0]?.url
+  );
+}
+
+throw new Error("Unknown VidLink response");
 }
 // ── HLS upstream fetcher with redirect support ────────────────────────────────
 function fetchUpstream(url, redirects = 0) {
