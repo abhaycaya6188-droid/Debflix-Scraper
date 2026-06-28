@@ -52,10 +52,8 @@ async function getStream(id, season, episode) {
     headers: { Referer: REFERER, Origin: ORIGIN, 'User-Agent': UA }
   });
   if (!res.ok) throw new Error(`vidlink API returned ${res.status}`);
-  const data = await res.json();
-  const playlist = data?.stream?.playlist;
-  if (!playlist) throw new Error('No playlist in response');
-  return playlist;
+  const body = await res.text();
+throw new Error(body || "Empty response");
 }
 
 // ── HLS upstream fetcher with redirect support ────────────────────────────────
