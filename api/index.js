@@ -61,9 +61,12 @@ if (!res.ok) {
   throw new Error(`vidlink API returned ${res.status}`);
 }
 
-const data = await res.json();
+const body = await res.text();
 
-const qualities = data?.stream?.qualities;
+console.log("TV BODY:");
+console.log(JSON.stringify(body));
+
+throw new Error("STOP");
 
 if (!qualities) {
   throw new Error("No qualities in response");
