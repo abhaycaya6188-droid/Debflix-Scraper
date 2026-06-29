@@ -322,10 +322,15 @@ const season = query.season || "1";
 const episode = query.episode || "1";
 
     const searchRes = await fetch(
-      `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`
-    );
+  `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`
+);
 
-    const search = await searchRes.json();
+const searchText = await searchRes.text();
+
+console.log("SEARCH RESPONSE:");
+console.log(searchText);
+
+const search = JSON.parse(searchText);
 
     const first =
       search.searchResult?.[0];
