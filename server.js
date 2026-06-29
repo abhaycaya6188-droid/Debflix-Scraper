@@ -321,9 +321,12 @@ if (pathname === "/api/netmirror") {
 const season = query.season || "1";
 const episode = query.episode || "1";
 
-    const searchRes = await fetch(
-  `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`
-);
+    const searchUrl =
+  `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`;
+
+console.log("SEARCH URL:", searchUrl);
+
+const searchRes = await fetch(searchUrl);
 
 const searchText = await searchRes.text();
 
@@ -331,6 +334,7 @@ console.log("SEARCH RESPONSE:");
 console.log(searchText);
 
 const search = JSON.parse(searchText);
+
 
     const first =
       search.searchResult?.[0];
