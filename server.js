@@ -351,17 +351,13 @@ const first =
 console.log("FIRST RESULT:");
 console.log(first);
 
-
-    const first =
-      search.searchResult?.[0];
-
-    if (!first) {
-      return res.end(
+if (!first) {
+    return res.end(
         JSON.stringify({
-          success: false
+            success: false
         })
-      );
-    }
+    );
+}
 
     const detailsRes = await fetch(
       `https://tv.imgcdn.kim/newtv/post.php?id=${first.id}`
