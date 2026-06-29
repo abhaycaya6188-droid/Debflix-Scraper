@@ -314,6 +314,7 @@ if (pathname === "/api/dahmer") {
 }
 
 if (pathname === "/api/netmirror") {
+  console.log("========== NETMIRROR ==========");
   try {
     const query = url.parse(req.url, true).query;
 
@@ -328,12 +329,12 @@ console.log("SEARCH URL:", searchUrl);
 
 const searchRes = await fetch(searchUrl);
 
-const searchText = await searchRes.text();
+const body = await searchRes.text();
 
-console.log("SEARCH RESPONSE:");
-console.log(searchText);
+console.log("SEARCH BODY:");
+console.log(body);
 
-const search = JSON.parse(searchText);
+const search = JSON.parse(body);
 
 
     const first =
@@ -426,6 +427,7 @@ return res.end(
 }
 
 if (pathname === "/api/test-key") {
+  
   try {
     const r = await fetch(
       "https://sc-u7-01.vix-content.net/storage/enc.key",
