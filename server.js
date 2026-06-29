@@ -323,11 +323,16 @@ const season = query.season || "1";
 const episode = query.episode || "1";
 
     const searchUrl =
-  `https://tv.imgcdn.kim/newtv/search.php?s=${encodeURIComponent(title)}`;
+  `https://net11.cc/search.php?s=${encodeURIComponent(title)}&t=${Math.floor(Date.now() / 1000)}`;
 
 console.log("SEARCH URL:", searchUrl);
 
-const searchRes = await fetch(searchUrl);
+const searchRes = await fetch(searchUrl, {
+  headers: {
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "https://net11.cc/home"
+  }
+});
 
 const body = await searchRes.text();
 
