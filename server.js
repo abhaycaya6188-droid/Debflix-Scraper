@@ -359,12 +359,26 @@ if (!first) {
     );
 }
 
-    const detailsRes = await fetch(
-      `https://tv.imgcdn.kim/newtv/post.php?id=${first.id}`
-    );
+    const detailsUrl =
+  `https://net11.cc/post.php?id=${first.id}&t=${Math.floor(Date.now() / 1000)}`;
 
-    const details =
-      await detailsRes.json();
+console.log("POST URL:", detailsUrl);
+
+const detailsRes = await fetch(detailsUrl, {
+  headers: {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "Referer": "https://net11.cc/home",
+    "Accept": "application/json, text/plain, */*"
+  }
+});
+
+const detailsBody = await detailsRes.text();
+
+console.log("POST BODY:");
+console.log(detailsBody);
+
+const details = JSON.parse(detailsBody);
 
     const seasonObj =
       details.season?.find(s =>
