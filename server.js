@@ -338,7 +338,7 @@ const searchRes = await fetch(searchUrl, {
 
   "Cookie":
 
-    "user_token=38f63c05f99cc6a335deaff943415d20; 82008494=156%3A9780; cf_clearance=2YNgkwh0djAgWplDjbd870tbdjQMtI7ikOcJ4O2adDQ"
+    "user_token=38f63c05f99cc6a335deaff943415d20; 82008494=156%3A9780; cf_clearance=2YNgkwh0djAgWplDjbd870tbdjQMtI7ikOcJ4O2adDQ-1782744055-1.2.1.1-bw.x89EI3CNi2bI52owgRNBfnKqgmZSWoLemGtPDeFebc1Iid30JEwZOUub8IvPYp.rkymMYU8K0VVp0V24Ssvnh.TicpWR36EQuZ3nhfCcwZGvBOiCHBlgGUE9gFbetL_kluD1lr4idYewnQkKncVuaOJFah77dQYlFoyNLas48FfRx_lwIGBMrRjkAJ9_7VO4m_wkF91ArAcJZA44_.AM_om6WFJfALt2QE2O3a9tGLB_GUXz3eCrdXrYSfQA3E8KL5C3mWYqAp8QlWiFjjoHsufETXfAByi2vqbkT3.8l.H2QQnc8EBFJ5By.Xx1vvRbVDhubu9zQlzdBw1U.DxSQIyqPjrcwW9tNdthqFHN_yQvMaBRuKzhMo2NS0AvKv3ubbF_1k1xQv4cvUF391g5Jw_2sm9N.g5yWIVtzrq7kWASaZDlViyt68yMOsTjWMXKfe2isQ5C7mH.wj0UJLRNnTwT1ktw4TYX9PLV9hOakz50J77Ye2.i0edUXmXZvEkXSQ860Jd3JhwdM2_pzcw"
 
 }
 });
