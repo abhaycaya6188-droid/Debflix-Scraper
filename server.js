@@ -329,9 +329,18 @@ console.log("SEARCH URL:", searchUrl);
 
 const searchRes = await fetch(searchUrl, {
   headers: {
-    "User-Agent": "Mozilla/5.0",
-    "Referer": "https://net11.cc/home"
-  }
+
+  "User-Agent":
+
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+
+  "Referer": "https://net11.cc/home",
+
+  "Cookie":
+
+    "user_token=38f63c05f99cc6a335deaff943415d20; 82008494=156%3A9780; cf_clearance=2YNgkwh0djAgWplDjbd870tbdjQMtI7ikOcJ4O2adDQ"
+
+}
 });
 
 const body = await searchRes.text();
