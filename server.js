@@ -345,6 +345,8 @@ const search = JSON.parse(body);
 console.log("SEARCH JSON:");
 console.log(JSON.stringify(search, null, 2));
 
+const first =
+  search.searchResult?.[0];
 
 console.log("FIRST RESULT:");
 console.log(first);
