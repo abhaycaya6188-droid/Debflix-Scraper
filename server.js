@@ -442,6 +442,12 @@ console.log(detailsBody);
 
 const details = JSON.parse(detailsBody);
 
+console.log("DETAILS JSON:");
+console.log(JSON.stringify(details, null, 2));
+
+console.log("SEASONS:");
+console.log(details.season);
+
     const seasonObj =
       details.season?.find(s =>
         s.s.includes(`Season ${season}`)
