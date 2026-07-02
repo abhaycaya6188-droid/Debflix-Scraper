@@ -15,12 +15,12 @@ let netmirrorCookieTime = 0;
 
 async function getNetmirrorCookie() {
 
-  if (
-    netmirrorCookie &&
-    Date.now() - netmirrorCookieTime < 15 * 60 * 60 * 1000
-  ) {
-    return netmirrorCookie;
-  }
+  // if (
+  //   netmirrorCookie &&
+  //   Date.now() - netmirrorCookieTime < 15 * 60 * 60 * 1000
+  // ) {
+  //   return netmirrorCookie;
+  // }
 
   const form = new URLSearchParams();
   form.append(
