@@ -83,15 +83,32 @@ function buildNewTvHeaders(player) {
 }
 
 async function getNetmirrorCookie() {
-  console.log("ENTER getNetmirrorCookie");
 
-  // if (
-  //   netmirrorCookie &&
-  //   Date.now() - netmirrorCookieTime < 15 * 60 * 60 * 1000
-  // ) {
-  //   return netmirrorCookie;
-  // }
+  console.log("INITIALIZING NET11 SESSION");
 
+  const res = await fetch(`${NET_MAIN}/home`, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+      "Accept":
+        "text/html,application/xhtml+xml",
+      "Referer": `${NET_MAIN}/`,
+    }
+  });
+
+  console.log("HOME STATUS:", res.status);
+
+  const cookies =
+    res.headers.get("set-cookie") || "";
+
+  console.log("HOME COOKIES:");
+  console.log(cookies);
+
+  netmirrorCookie = cookies;
+  netmirrorCookieTime = Date.now();
+
+  return cookies;
+}
   const form = new URLSearchParams();
   form.append(
     "g-recaptcha-response",
@@ -614,7 +631,7 @@ const epRes = await fetch(
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
       "Referer": `${NET_MAIN}/home`,
-      "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
+      "Cookie": tHash
     }
   }
 );
