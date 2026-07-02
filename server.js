@@ -16,6 +16,7 @@ let netmirrorCookie = "";
 let netmirrorCookieTime = 0;
 
 async function getNetmirrorCookie() {
+  console.log("ENTER getNetmirrorCookie");
 
   // if (
   //   netmirrorCookie &&
@@ -37,8 +38,8 @@ async function getNetmirrorCookie() {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/147.0.0.0 Safari/537.36",
-        Origin: "https://net52.cc",
-        Referer: "https://net52.cc/verify2",
+        Origin: NET_VERIFY,
+Referer: `${NET_VERIFY}/verify2`,
         "Content-Type":
           "application/x-www-form-urlencoded"
       },
@@ -46,7 +47,7 @@ async function getNetmirrorCookie() {
       redirect: "manual"
     }
   );
-
+console.log("VERIFY FETCH COMPLETED");
   console.log("VERIFY STATUS:", response.status);
 console.log("VERIFY SET-COOKIE:", response.headers.get("set-cookie"));
 
@@ -439,8 +440,15 @@ if (pathname === "/api/netmirror") {
 const season = query.season || "1";
 const episode = query.episode || "1";
 
-const tHash =
-  await getNetmirrorCookie();
+let tHash;
+
+try {
+    tHash = await getNetmirrorCookie();
+    console.log("COOKIE:", tHash);
+} catch (e) {
+    console.error("COOKIE ERROR:", e);
+    throw e;
+}
 
     const searchUrl =
   `${NET_MAIN}/search.php?s=${encodeURIComponent(title)}&t=${Math.floor(Date.now() / 1000)}`;
@@ -723,6 +731,7 @@ if (
 if (pathname === "/api/test-netmirror-cookie") {
   try {
     const cookie = await getNetmirrorCookie();
+    
 
     return res.end(
       JSON.stringify({
