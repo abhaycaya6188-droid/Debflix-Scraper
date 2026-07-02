@@ -497,12 +497,13 @@ const player =
 return res.end(
   JSON.stringify({
     success: true,
-    episode: selectedEpisode.t,
-    video_link: player.video_link,
+    url: player.video_link,
     referer: player.referer,
-    ott: player.ott
+    ott: player.ott,
+    episode: selectedEpisode.t
   })
 );
+
   } catch (e) {
     return res.end(
       JSON.stringify({
