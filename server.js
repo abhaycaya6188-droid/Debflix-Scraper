@@ -720,6 +720,27 @@ if (
   }
 }
 
+if (pathname === "/api/test-netmirror-cookie") {
+  try {
+    const cookie = await getNetmirrorCookie();
+
+    return res.end(
+      JSON.stringify({
+        success: true,
+        cookie
+      })
+    );
+  } catch (e) {
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error: e.message
+      })
+    );
+  }
+}
+
+
 return vidlinkHandler(req, res);
 
 })
