@@ -3,6 +3,7 @@ console.log("RAILWAY FORCE REBUILD");
 const http = require("http");
 const url = require("url");
 const { execSync } = require("child_process");
+const db = require("./api/database");
 
 const vidlinkHandler = require("./api/index");
 
