@@ -6,6 +6,8 @@ const { execSync } = require("child_process");
 const db = require("./api/database");
 const vidlinkHandler = require("./api/index");
 const progress = require("./api/progress");
+const NET_VERIFY = "https://net22.cc";
+const NET_MAIN = "https://net52.cc";
 
 const port = process.env.PORT || 3000;
 
@@ -29,7 +31,7 @@ async function getNetmirrorCookie() {
   );
 
   const response = await fetch(
-    "https://net52.cc/verify.php",
+    `${NET_VERIFY}/verify.php`,
     {
       method: "POST",
       headers: {
@@ -441,8 +443,7 @@ const tHash =
   await getNetmirrorCookie();
 
     const searchUrl =
-  `https://net11.cc/search.php?s=${encodeURIComponent(title)}&t=${Math.floor(Date.now() / 1000)}`;
-
+  `${NET_MAIN}/search.php?s=${encodeURIComponent(title)}&t=${Math.floor(Date.now() / 1000)}`;
 console.log("SEARCH URL:", searchUrl);
 
 const searchRes = await fetch(searchUrl, {
@@ -450,7 +451,7 @@ const searchRes = await fetch(searchUrl, {
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
 
-    "Referer": "https://net11.cc/home",
+   "Referer": `${NET_MAIN}/home`,
 
     "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
   }
@@ -482,15 +483,14 @@ if (!first) {
 }
 
     const detailsUrl =
-  `https://net11.cc/post.php?id=${first.id}&t=${Math.floor(Date.now() / 1000)}`;
-
+  `${NET_MAIN}/post.php?id=${first.id}&t=${Math.floor(Date.now() / 1000)}`;
 console.log("POST URL:", detailsUrl);
 
 const detailsRes = await fetch(detailsUrl, {
   headers: {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-  "Referer": "https://net11.cc/home",
+  "Referer": `${NET_MAIN}/home`,
   "Accept": "application/json, text/plain, */*",
   "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
 }
@@ -524,12 +524,12 @@ console.log(details.season);
 }
 
 const epRes = await fetch(
-  `https://net52.cc/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`,
+  `${NET_MAIN}/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`,
   {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-      "Referer": "https://net11.cc/home",
+      "Referer": `${NET_MAIN}/home`,
       "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
     }
   }
