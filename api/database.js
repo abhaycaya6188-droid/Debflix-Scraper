@@ -1,16 +1,13 @@
-const Database = require("better-sqlite3");
+let db = null;
 
-// Opens oracle.db in the project folder.
-// If it doesn't exist, it will be created automatically.
-const db = new Database("oracle.db");
+try {
+  const Database = require("better-sqlite3");
 
-// Better performance & reliability
-db.pragma("journal_mode = WAL");
+  db = new Database("oracle.db");
 
-// ----------------------------------------------------
-// Progress / Continue Watching
-// ----------------------------------------------------
-db.exec(`
+  db.pragma("journal_mode = WAL");
+
+  db.exec(`
 CREATE TABLE IF NOT EXISTS progress (
 
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,6 +19,7 @@ CREATE TABLE IF NOT EXISTS progress (
     season INTEGER DEFAULT 0,
 
     episode INTEGER DEFAULT 0,
+
     userId TEXT DEFAULT 'default',
 
     title TEXT,
@@ -38,15 +36,33 @@ CREATE TABLE IF NOT EXISTS progress (
 
     updatedAt INTEGER NOT NULL,
 
-UNIQUE(
-    userId,
-    tmdbId,
-    type,
-    season,
-    episode
-)
+    UNIQUE(
+      userId,
+      tmdbId,
+      type,
+      season,
+      episode
+    )
 
 );
 `);
+
+  console.log("SQLite initialized");
+
+} catch (err) {
+
+  console.error("SQLite disabled:", err.message);
+
+  db = {
+    prepare() {
+      return {
+        run() {},
+        get() { return null; },
+        all() { return []; }
+      };
+    },
+    exec() {}
+  };
+}
 
 module.exports = db;
