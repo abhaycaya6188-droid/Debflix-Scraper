@@ -6,7 +6,7 @@ const { execSync } = require("child_process");
 const db = require("./api/database");
 const vidlinkHandler = require("./api/index");
 const progress = require("./api/progress");
-const NET_VERIFY = "https://net22.cc";
+const NET_VERIFY = "https://net52.cc";
 const NET_MAIN = "https://net52.cc";
 
 const port = process.env.PORT || 3000;
