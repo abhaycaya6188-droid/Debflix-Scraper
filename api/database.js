@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS progress (
     season INTEGER DEFAULT 0,
 
     episode INTEGER DEFAULT 0,
+    userId TEXT DEFAULT 'default',
 
     title TEXT,
 
@@ -36,6 +37,13 @@ CREATE TABLE IF NOT EXISTS progress (
     duration INTEGER DEFAULT 0,
 
     updatedAt INTEGER NOT NULL
+    UNIQUE(
+    userId,
+    tmdbId,
+    type,
+    season,
+    episode
+)
 
 );
 `);

@@ -6,6 +6,7 @@ const { execSync } = require("child_process");
 const db = require("./api/database");
 
 const vidlinkHandler = require("./api/index");
+const progress = require("./api/progress");
 
 const port = process.env.PORT || 3000;
 
@@ -20,6 +21,52 @@ if (req.method === "OPTIONS") {
   return res.end();
 }
     const pathname = url.parse(req.url).pathname;
+
+    if (pathname === "/api/progress" && req.method === "POST") {
+
+    let body = "";
+
+    req.on("data", chunk => {
+        body += chunk;
+    });
+
+    req.on("end", () => {
+
+        try {
+
+            const data = JSON.parse(body);
+
+            progress.saveProgress(data);
+
+            res.setHeader(
+                "Content-Type",
+                "application/json"
+            );
+
+            res.end(
+                JSON.stringify({
+                    success: true
+                })
+            );
+
+        } catch (e) {
+
+            res.statusCode = 500;
+
+            res.end(
+                JSON.stringify({
+                    success: false,
+                    error: e.message
+                })
+            );
+
+        }
+
+    });
+
+    return;
+
+}
 
     if (pathname === "/api/test-dahmer-folder") {
       try {
@@ -594,6 +641,4 @@ if (
 
 return vidlinkHandler(req, res);
   })
-  .listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
+  
