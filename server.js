@@ -109,53 +109,7 @@ async function getNetmirrorCookie() {
 
   return cookies;
 }
-  const form = new URLSearchParams();
-  form.append(
-    "g-recaptcha-response",
-    crypto.randomUUID()
-  );
-
-  const response = await fetch(
-    `${NET_VERIFY}/verify.php`,
-    {
-      method: "POST",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/147.0.0.0 Safari/537.36",
-        Origin: NET_VERIFY,
-Referer: `${NET_VERIFY}/verify2`,
-        "Content-Type":
-          "application/x-www-form-urlencoded"
-      },
-      body: form,
-      redirect: "manual"
-    }
-  );
-console.log("VERIFY FETCH COMPLETED");
-  console.log("VERIFY STATUS:", response.status);
-console.log("VERIFY SET-COOKIE:", response.headers.get("set-cookie"));
-
-  const cookies =
-    response.headers.get("set-cookie") || "";
-
-  const match =
-    cookies.match(/t_hash_t=([^;]+)/);
-
-  if (!match)
-    throw new Error(
-      "Failed to obtain t_hash_t"
-    );
-
-  netmirrorCookie = match[1];
-  netmirrorCookieTime = Date.now();
-
-  console.log(
-    "NEW t_hash_t:",
-    netmirrorCookie
-  );
-
-  return netmirrorCookie;
-}
+  
 
 http
   .createServer(async (req, res) => {
