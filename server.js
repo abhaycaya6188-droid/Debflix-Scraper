@@ -524,12 +524,14 @@ console.log(JSON.stringify(details, null, 2));
 console.log("SEASONS:");
 console.log(details.season);
 
-    const seasonObj =
-  details.season?.find(
-    s => s.s == season
-  );
+    const seasonObj = details.season?.find((item) => {
+  console.log("CHECKING:", item.s, "==", season);
+  return Number(item.s) === Number(season);
+});
 
-    if (!seasonObj) {
+console.log("FOUND SEASON:", seasonObj);
+
+if (!seasonObj) {
   return res.end(
     JSON.stringify({
       success: false,
@@ -552,7 +554,7 @@ const epRes = await fetch(
 
 const epData =
   await epRes.json();
-console.log("REQUESTED SEASON:", season);
+
 const selectedEpisode =
   epData.episodes?.find(
     e =>
