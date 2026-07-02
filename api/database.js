@@ -36,8 +36,9 @@ CREATE TABLE IF NOT EXISTS progress (
 
     duration INTEGER DEFAULT 0,
 
-    updatedAt INTEGER NOT NULL
-    UNIQUE(
+    updatedAt INTEGER NOT NULL,
+
+UNIQUE(
     userId,
     tmdbId,
     type,
