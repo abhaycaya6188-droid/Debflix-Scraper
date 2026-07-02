@@ -4,11 +4,71 @@ const http = require("http");
 const url = require("url");
 const { execSync } = require("child_process");
 const db = require("./api/database");
-
 const vidlinkHandler = require("./api/index");
 const progress = require("./api/progress");
 
 const port = process.env.PORT || 3000;
+
+const crypto = require("crypto");
+let netmirrorCookie = "";
+let netmirrorCookieTime = 0;
+
+async function getNetmirrorCookie() {
+
+  if (
+    netmirrorCookie &&
+    Date.now() - netmirrorCookieTime < 15 * 60 * 60 * 1000
+  ) {
+    return netmirrorCookie;
+  }
+
+  const form = new URLSearchParams();
+  form.append(
+    "g-recaptcha-response",
+    crypto.randomUUID()
+  );
+
+  const response = await fetch(
+    "https://net52.cc/verify.php",
+    {
+      method: "POST",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/147.0.0.0 Safari/537.36",
+        Origin: "https://net52.cc",
+        Referer: "https://net52.cc/verify2",
+        "Content-Type":
+          "application/x-www-form-urlencoded"
+      },
+      body: form,
+      redirect: "manual"
+    }
+  );
+
+  console.log("VERIFY STATUS:", response.status);
+console.log("VERIFY SET-COOKIE:", response.headers.get("set-cookie"));
+
+  const cookies =
+    response.headers.get("set-cookie") || "";
+
+  const match =
+    cookies.match(/t_hash_t=([^;]+)/);
+
+  if (!match)
+    throw new Error(
+      "Failed to obtain t_hash_t"
+    );
+
+  netmirrorCookie = match[1];
+  netmirrorCookieTime = Date.now();
+
+  console.log(
+    "NEW t_hash_t:",
+    netmirrorCookie
+  );
+
+  return netmirrorCookie;
+}
 
 http
   .createServer(async (req, res) => {
@@ -367,6 +427,8 @@ if (pathname === "/api/dahmer") {
 }
 
 if (pathname === "/api/netmirror") {
+
+  
   console.log("========== NETMIRROR ==========");
   try {
     const query = url.parse(req.url, true).query;
@@ -375,6 +437,9 @@ if (pathname === "/api/netmirror") {
 const season = query.season || "1";
 const episode = query.episode || "1";
 
+const tHash =
+  await getNetmirrorCookie();
+
     const searchUrl =
   `https://net11.cc/search.php?s=${encodeURIComponent(title)}&t=${Math.floor(Date.now() / 1000)}`;
 
@@ -382,18 +447,13 @@ console.log("SEARCH URL:", searchUrl);
 
 const searchRes = await fetch(searchUrl, {
   headers: {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
 
-  "User-Agent":
+    "Referer": "https://net11.cc/home",
 
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-
-  "Referer": "https://net11.cc/home",
-
-  "Cookie":
-
-    "user_token=38f63c05f99cc6a335deaff943415d20; 82008494=156%3A9780; cf_clearance=2YNgkwh0djAgWplDjbd870tbdjQMtI7ikOcJ4O2adDQ-1782744055-1.2.1.1-bw.x89EI3CNi2bI52owgRNBfnKqgmZSWoLemGtPDeFebc1Iid30JEwZOUub8IvPYp.rkymMYU8K0VVp0V24Ssvnh.TicpWR36EQuZ3nhfCcwZGvBOiCHBlgGUE9gFbetL_kluD1lr4idYewnQkKncVuaOJFah77dQYlFoyNLas48FfRx_lwIGBMrRjkAJ9_7VO4m_wkF91ArAcJZA44_.AM_om6WFJfALt2QE2O3a9tGLB_GUXz3eCrdXrYSfQA3E8KL5C3mWYqAp8QlWiFjjoHsufETXfAByi2vqbkT3.8l.H2QQnc8EBFJ5By.Xx1vvRbVDhubu9zQlzdBw1U.DxSQIyqPjrcwW9tNdthqFHN_yQvMaBRuKzhMo2NS0AvKv3ubbF_1k1xQv4cvUF391g5Jw_2sm9N.g5yWIVtzrq7kWASaZDlViyt68yMOsTjWMXKfe2isQ5C7mH.wj0UJLRNnTwT1ktw4TYX9PLV9hOakz50J77Ye2.i0edUXmXZvEkXSQ860Jd3JhwdM2_pzcw"
-
-}
+    "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
+  }
 });
 
 const body = await searchRes.text();
@@ -428,11 +488,12 @@ console.log("POST URL:", detailsUrl);
 
 const detailsRes = await fetch(detailsUrl, {
   headers: {
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-    "Referer": "https://net11.cc/home",
-    "Accept": "application/json, text/plain, */*"
-  }
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+  "Referer": "https://net11.cc/home",
+  "Accept": "application/json, text/plain, */*",
+  "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
+}
 });
 
 const detailsBody = await detailsRes.text();
@@ -463,7 +524,15 @@ console.log(details.season);
 }
 
 const epRes = await fetch(
-  `https://net52.cc/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`
+  `https://net52.cc/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`,
+  {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "Referer": "https://net11.cc/home",
+      "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
+    }
+  }
 );
 
 const epData =
