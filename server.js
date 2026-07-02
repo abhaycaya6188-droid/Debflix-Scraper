@@ -446,8 +446,10 @@ try {
     tHash = await getNetmirrorCookie();
     console.log("COOKIE:", tHash);
 } catch (e) {
-    console.error("COOKIE ERROR:", e);
-    throw e;
+  console.error("VERIFY FETCH ERROR:");
+  console.error(e);
+  console.error("CAUSE:", e.cause);
+  throw e;
 }
 
     const searchUrl =
@@ -494,6 +496,9 @@ if (!first) {
   `${NET_MAIN}/post.php?id=${first.id}&t=${Math.floor(Date.now() / 1000)}`;
 console.log("POST URL:", detailsUrl);
 
+
+console.log("POST COOKIE:");
+console.log(`t_hash_t=${tHash}; hd=on; ott=nf`);
 const detailsRes = await fetch(detailsUrl, {
   headers: {
   "User-Agent":
@@ -504,6 +509,8 @@ const detailsRes = await fetch(detailsUrl, {
 }
 });
 
+console.log("POST STATUS:", detailsRes.status);
+console.log("POST SET-COOKIE:", detailsRes.headers.get("set-cookie"));
 const detailsBody = await detailsRes.text();
 
 console.log("POST BODY:");
