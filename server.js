@@ -183,7 +183,7 @@ const stream =
   `${playlistMatch[1]}${separator}token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
     const proxied =
-  `https://macro-immigration-filters-influence.trycloudflare.com/api/test-playlist?url=${encodeURIComponent(stream)}`;
+  `http://80.225.229.106:3000/api/test-playlist?url=${encodeURIComponent(stream)}`;
 
 return res.end(
   JSON.stringify({
@@ -555,8 +555,8 @@ if (pathname === "/api/test-playlist") {
    const text = await r.text();
 
 const tunnel =
-  "https://macro-immigration-filters-influence.trycloudflare.com";
-
+  "http://80.225.229.106:3000";
+  
 let rewritten = text;
 
 // nested playlists
