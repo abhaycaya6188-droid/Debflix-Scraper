@@ -552,7 +552,7 @@ const epRes = await fetch(
 
 const epData =
   await epRes.json();
-
+console.log("REQUESTED SEASON:", season);
 const selectedEpisode =
   epData.episodes?.find(
     e =>
