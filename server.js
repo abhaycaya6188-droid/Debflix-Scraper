@@ -525,9 +525,9 @@ console.log("SEASONS:");
 console.log(details.season);
 
     const seasonObj =
-      details.season?.find(s =>
-        s.s.includes(`Season ${season}`)
-      );
+  details.season?.find(
+    s => s.s == season
+  );
 
     if (!seasonObj) {
   return res.end(
