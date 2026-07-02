@@ -15,6 +15,73 @@ const crypto = require("crypto");
 let netmirrorCookie = "";
 let netmirrorCookieTime = 0;
 
+// -----------------------------------------------------
+// NewTV helpers (matches Kotlin provider)
+// -----------------------------------------------------
+
+const newTvDomains = [
+  "https://newtv.cfd",
+  "https://newtv.cyou",
+  "https://newtv.bond",
+  "https://tv.imgcdn.kim",
+];
+
+function decodeBase64(value) {
+  if (!value) return "";
+
+  try {
+    return Buffer.from(value, "base64").toString("utf8");
+  } catch {
+    return value;
+  }
+}
+
+function resolveApiUrl(player) {
+  if (!player) return null;
+
+  // already absolute
+  if (player.api?.startsWith("http")) {
+    return player.api;
+  }
+
+  // relative api
+  if (player.api) {
+    const base =
+      newTvDomains.find(d => player.server?.startsWith(d)) ??
+      newTvDomains[0];
+
+    return base + player.api;
+  }
+
+  // fallback
+  if (player.server) {
+    return player.server.replace("/player.php", "/api.php");
+  }
+
+  return null;
+}
+
+function buildNewTvHeaders(player) {
+  return {
+    Accept: "application/json, text/plain, */*",
+    Referer: player.referer || player.server || `${newTvDomains[0]}/`,
+    Origin:
+      (() => {
+        try {
+          return new URL(
+            player.server || newTvDomains[0]
+          ).origin;
+        } catch {
+          return newTvDomains[0];
+        }
+      })(),
+    Ott: player.ott || "nf",
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+    "X-Requested-With": "NetmirrorNewTV v1.0",
+  };
+}
+
 async function getNetmirrorCookie() {
   console.log("ENTER getNetmirrorCookie");
 
@@ -578,23 +645,78 @@ const playerRes = await fetch(
   {
     headers: {
       Ott: "nf",
-      "X-Requested-With":
-        "NetmirrorNewTV v1.0",
+      "X-Requested-With": "NetmirrorNewTV v1.0",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
     },
   }
 );
 
 const playerText = await playerRes.text();
+console.log("PLAYER:");
 console.log(playerText);
+
 const player = JSON.parse(playerText);
+
+const apiUrl = resolveApiUrl(player);
+
+if (!apiUrl) {
+  throw new Error("Unable to resolve NewTV api url");
+}
+
+console.log("API URL:", apiUrl);
+
+const apiRes = await fetch(apiUrl, {
+  method: "POST",
+  headers: buildNewTvHeaders(player),
+});
+
+const apiText = await apiRes.text();
+
+console.log("API RESPONSE:");
+console.log(apiText);
+
+let apiJson;
+
+try {
+  apiJson = JSON.parse(apiText);
+} catch {
+  throw new Error("Invalid NewTV API response");
+}
+
+let stream =
+  apiJson.video_link ||
+  apiJson.file ||
+  apiJson.url ||
+  apiJson.src ||
+  apiJson.link;
+
+if (!stream && apiJson.data) {
+  try {
+    const decoded = decodeBase64(apiJson.data);
+
+    const decodedJson = JSON.parse(decoded);
+
+    stream =
+      decodedJson.video_link ||
+      decodedJson.file ||
+      decodedJson.url ||
+      decodedJson.src ||
+      decodedJson.link;
+  } catch {}
+}
+
+if (!stream) {
+  throw new Error("No stream returned from NewTV API");
+}
 
 return res.end(
   JSON.stringify({
     success: true,
-    url: player.video_link,
+    url: stream,
     referer: player.referer,
     ott: player.ott,
-    episode: selectedEpisode.t
+    episode: selectedEpisode.t,
   })
 );
 
