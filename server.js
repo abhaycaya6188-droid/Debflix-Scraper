@@ -552,8 +552,9 @@ const epRes = await fetch(
   }
 );
 
-const epData =
-  await epRes.json();
+const epText = await epRes.text();
+console.log(epText);
+const epData = JSON.parse(epText);
 
 const selectedEpisode =
   epData.episodes?.find(
@@ -583,8 +584,9 @@ const playerRes = await fetch(
   }
 );
 
-const player =
-  await playerRes.json();
+const playerText = await playerRes.text();
+console.log(playerText);
+const player = JSON.parse(playerText);
 
 return res.end(
   JSON.stringify({
