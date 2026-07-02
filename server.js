@@ -128,7 +128,12 @@ if (req.method === "OPTIONS") {
       }
     });
 
-    const apiJson = await apiRes.json();
+    const body = await apiRes.text();
+
+console.log("VIXSRC STATUS:", apiRes.status);
+console.log("VIXSRC BODY:", body.substring(0, 500));
+
+const apiJson = JSON.parse(body);
 
     if (!apiJson?.src) {
       return res.end(
@@ -556,7 +561,7 @@ if (pathname === "/api/test-playlist") {
 
 const tunnel =
   "http://80.225.229.106:3000";
-  
+
 let rewritten = text;
 
 // nested playlists
