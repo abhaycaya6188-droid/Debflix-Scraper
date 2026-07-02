@@ -6,8 +6,8 @@ const { execSync } = require("child_process");
 const db = require("./api/database");
 const vidlinkHandler = require("./api/index");
 const progress = require("./api/progress");
-const NET_VERIFY = "https://net52.cc";
-const NET_MAIN = "https://net52.cc";
+const NET_VERIFY = "https://net11.cc";
+const NET_MAIN = "https://net11.cc";
 
 const port = process.env.PORT || 3000;
 
@@ -640,86 +640,106 @@ if (!selectedEpisode) {
   );
 }
 
-const playerRes = await fetch(
-  `https://tv.imgcdn.kim/newtv/player.php?id=${selectedEpisode.id}`,
+// -------------------------------
+// NEW NET11 FLOW
+// -------------------------------
+
+const playRes = await fetch(
+  `${NET_MAIN}/play.php`,
   {
+    method: "POST",
     headers: {
-      Ott: "nf",
-      "X-Requested-With": "NetmirrorNewTV v1.0",
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+      "Referer": `${NET_MAIN}/home`,
+      "Origin": NET_MAIN,
+      "X-Requested-With": "XMLHttpRequest",
+      "Content-Type":
+        "application/x-www-form-urlencoded; charset=UTF-8",
+      "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
     },
+    body: new URLSearchParams({
+      id: selectedEpisode.id
+    })
   }
 );
 
-const playerText = await playerRes.text();
-console.log("PLAYER:");
-console.log(playerText);
+const playText = await playRes.text();
 
-const player = JSON.parse(playerText);
+console.log("PLAY:");
+console.log(playText);
 
-const apiUrl = resolveApiUrl(player);
+const play = JSON.parse(playText);
 
-if (!apiUrl) {
-  throw new Error("Unable to resolve NewTV api url");
+if (!play.h) {
+  throw new Error("play.php returned no token");
 }
 
-console.log("API URL:", apiUrl);
+const token = play.h.replace(/^in=/, "");
 
-const apiRes = await fetch(apiUrl, {
-  method: "POST",
-  headers: buildNewTvHeaders(player),
-});
+const parts = token.split("::");
 
-const apiText = await apiRes.text();
-
-console.log("API RESPONSE:");
-console.log(apiText);
-
-let apiJson;
-
-try {
-  apiJson = JSON.parse(apiText);
-} catch {
-  throw new Error("Invalid NewTV API response");
+if (parts.length < 3) {
+  throw new Error("Invalid play token");
 }
 
-let stream =
-  apiJson.video_link ||
-  apiJson.file ||
-  apiJson.url ||
-  apiJson.src ||
-  apiJson.link;
+const tm = parts[2];
 
-if (!stream && apiJson.data) {
-  try {
-    const decoded = decodeBase64(apiJson.data);
+const playlistUrl =
+  `${NET_MAIN}/playlist.php` +
+  `?id=${selectedEpisode.id}` +
+  `&t=${encodeURIComponent(first.t)}` +
+  `&tm=${tm}` +
+  `&h=${encodeURIComponent(token)}`;
 
-    const decodedJson = JSON.parse(decoded);
+console.log("PLAYLIST URL:");
+console.log(playlistUrl);
 
-    stream =
-      decodedJson.video_link ||
-      decodedJson.file ||
-      decodedJson.url ||
-      decodedJson.src ||
-      decodedJson.link;
-  } catch {}
+const playlistRes = await fetch(
+  playlistUrl,
+  {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+      "Referer":
+        `${NET_MAIN}/play.php?id=${selectedEpisode.id}&in=${token}`
+    }
+  }
+);
+
+const playlistText =
+  await playlistRes.text();
+
+console.log("PLAYLIST:");
+console.log(playlistText);
+
+const playlist =
+  JSON.parse(playlistText);
+
+if (
+  !playlist.length ||
+  !playlist[0].sources?.length
+) {
+  throw new Error("No playlist sources");
 }
 
-if (!stream) {
-  throw new Error("No stream returned from NewTV API");
-}
+const source =
+  playlist[0].sources[0];
 
+const stream =
+  source.file.startsWith("http")
+    ? source.file
+    : `${NET_MAIN}${source.file}`;
 return res.end(
   JSON.stringify({
     success: true,
     url: stream,
-    referer: player.referer,
-    ott: player.ott,
-    episode: selectedEpisode.t,
+    referer: `${NET_MAIN}/play.php?id=${selectedEpisode.id}&in=${token}`,
+    episode: selectedEpisode.t
   })
 );
 
+    
   } catch (e) {
     return res.end(
       JSON.stringify({
