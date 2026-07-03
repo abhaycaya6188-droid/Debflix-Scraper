@@ -259,7 +259,7 @@ console.log(
     if (!source?.url) continue;
 
     const proxiedUrl =
-  `http://80.225.229.106:3000/api/hls-proxy?url=${encodeURIComponent(source.url)}`;
+`https://oracle.debflicks.com/api/hls-proxy?url=${encodeURIComponent(source.url)}`;
 
 streams.push({
   provider: "Videasy",
@@ -589,7 +589,7 @@ if (pathname === "/api/hls-proxy") {
         await response.text();
 
       const base =
-        "http://80.225.229.106:3000";
+"https://oracle.debflicks.com";
 
       const rewritten =
         text.replace(
@@ -742,7 +742,7 @@ const stream =
   `${playlistMatch[1]}${separator}token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
     const proxied =
-  `http://80.225.229.106:3000/api/test-playlist?url=${encodeURIComponent(stream)}`;
+  `https://oracle.debflicks.com/api/hls-proxy?url=${encodeURIComponent(stream)}`;
 
 return res.end(
   JSON.stringify({
@@ -1221,7 +1221,7 @@ if (pathname === "/api/test-playlist") {
    const text = await r.text();
 
 const tunnel =
-  "http://80.225.229.106:3000";
+"https://oracle.debflicks.com";
 
 let rewritten = text;
 
