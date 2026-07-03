@@ -258,14 +258,15 @@ console.log(
 
     if (!source?.url) continue;
 
-    streams.push({
-      provider: "Videasy",
-      quality: source.quality || "Auto",
-      url: source.url,
-      type: source.url.includes(".m3u8")
-        ? "hls"
-        : "mp4",
-    });
+    const proxiedUrl =
+  `http://80.225.229.106:3000/api/hls-proxy?url=${encodeURIComponent(source.url)}`;
+
+streams.push({
+  provider: "Videasy",
+  quality: source.quality || "Auto",
+  url: proxiedUrl,
+  type: "hls",
+});
 
   }
 
@@ -536,6 +537,117 @@ const query = parsed.query;
 
 }
 
+if (pathname === "/api/hls-proxy") {
+
+  try {
+
+    const playlistUrl =
+      query.url;
+
+    if (!playlistUrl) {
+      res.statusCode = 400;
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Missing url"
+        })
+      );
+    }
+
+    console.log("HLS PROXY:");
+    console.log(playlistUrl);
+
+    const response =
+      await fetch(
+        decodeURIComponent(playlistUrl),
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+            "Referer":
+              "https://www.vidking.net/",
+            "Origin":
+              "https://www.vidking.net"
+          }
+        }
+      );
+
+    const contentType =
+      response.headers.get("content-type") || "";
+
+    console.log(
+      "CONTENT:",
+      contentType
+    );
+    if (
+      contentType.includes("application/vnd.apple.mpegurl") ||
+      playlistUrl.includes(".m3u8")
+    ) {
+
+      const text =
+        await response.text();
+
+      const base =
+        "http://80.225.229.106:3000";
+
+      const rewritten =
+        text.replace(
+          /(https?:\/\/[^\s"]+)/g,
+          (match) =>
+            `${base}/api/hls-proxy?url=${encodeURIComponent(match)}`
+        );
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.apple.mpegurl"
+      );
+
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        "*"
+      );
+
+      return res.end(rewritten);
+
+    }
+
+        const buffer =
+      Buffer.from(
+        await response.arrayBuffer()
+      );
+
+    res.setHeader(
+      "Content-Type",
+      contentType || "application/octet-stream"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      "*"
+    );
+
+    return res.end(buffer);
+
+  } catch (e) {
+
+    console.error(
+      "HLS PROXY ERROR:",
+      e
+    );
+
+    res.statusCode = 500;
+
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error: e.message
+      })
+    );
+
+  }
+
+}
 
 
     if (pathname === "/api/vixsrc") {
