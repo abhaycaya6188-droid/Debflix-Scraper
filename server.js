@@ -3,6 +3,7 @@ console.log("RAILWAY FORCE REBUILD");
 const http = require("http");
 const url = require("url");
 const { execSync } = require("child_process");
+const { spawn } = require("child_process");
 const db = require("./api/database");
 const vidlinkHandler = require("./api/index");
 const progress = require("./api/progress");
@@ -10,6 +11,306 @@ const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
 
 const port = process.env.PORT || 3000;
+
+
+const VIDEASY_API = "https://api.videasy.to";
+
+const videasyProviders = [
+  { name: "Hydrogen", endpoint: "cdn" },
+  { name: "Oxygen", endpoint: "mb-flix" },
+  { name: "Lithium", endpoint: "downloader2" },
+];
+
+function decryptVideasy(cipher, tmdbId) {
+  return new Promise((resolve, reject) => {
+
+    
+
+    const child = spawn(
+      process.execPath,
+      [
+        "decrypt.js",
+        cipher,
+        String(tmdbId),
+      ],
+      {
+        cwd: __dirname,
+      }
+    );
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", d => {
+      stdout += d.toString();
+    });
+
+    child.stderr.on("data", d => {
+      stderr += d.toString();
+    });
+
+    child.on("error", reject);
+
+    child.on("close", code => {
+
+      if (code !== 0) {
+        return reject(
+          new Error(
+            stderr || `decrypt exited ${code}`
+          )
+        );
+      }
+
+      try {
+
+        const result = JSON.parse(stdout);
+
+        if (!result.success) {
+          return reject(
+            new Error(
+              result.error || "Decrypt failed"
+            )
+          );
+        }
+
+        resolve(result.data);
+
+      } catch (e) {
+
+        reject(e);
+
+      }
+
+    });
+
+  });
+}
+
+async function fetchVideasyCipher(endpoint, params) {
+
+  const apiUrl =
+    `${VIDEASY_API}/${endpoint}/sources-with-title?${params.toString()}`;
+
+  console.log("================================");
+  console.log("VIDEASY REQUEST");
+  console.log(apiUrl);
+  console.log("================================");
+
+  const response = await fetch(apiUrl, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/134.0.0.0 Safari/537.36",
+      "Referer":
+        "https://www.vidking.net/",
+      "Origin":
+        "https://www.vidking.net",
+    },
+  });
+
+  console.log(
+    "VIDEASY STATUS:",
+    response.status
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `HTTP ${response.status}`
+    );
+  }
+
+  const cipher =
+    (await response.text()).trim();
+
+  if (!cipher) {
+    throw new Error(
+      "Empty ciphertext"
+    );
+  }
+
+  console.log(
+    "Cipher length:",
+    cipher.length
+  );
+
+  return cipher;
+}
+async function getVideasySources(query) {
+
+  const tmdbId = query.id;
+
+  if (!tmdbId) {
+    throw new Error("Missing TMDB id");
+  }
+
+  const type =
+    (query.type || "movie").toLowerCase();
+
+  const season =
+    query.season ||
+    query.s ||
+    "1";
+
+  const episode =
+    query.episode ||
+    query.e ||
+    "1";
+
+  const title =
+    query.title || "";
+
+  const year =
+    query.year || "";
+
+  const imdbId =
+    query.imdbId || "";
+
+  const params = new URLSearchParams({
+    title,
+    mediaType: type,
+    year,
+    tmdbId,
+    imdbId,
+    seasonId: season,
+    episodeId: episode,
+  });
+
+  let decrypted = null;
+  let providerUsed = null;
+
+  for (const provider of videasyProviders) {
+
+    try {
+
+      console.log("================================");
+      console.log("VIDEASY:", provider.name);
+      console.log("================================");
+
+      const cipher =
+        await fetchVideasyCipher(
+          provider.endpoint,
+          params
+        );
+
+      decrypted =
+        await decryptVideasy(
+          cipher,
+          tmdbId
+        );
+
+      if (
+        !decrypted ||
+        !Array.isArray(decrypted.sources) ||
+        decrypted.sources.length === 0
+      ) {
+
+        console.log(
+          provider.name,
+          "returned no sources"
+        );
+
+        continue;
+      }
+
+      providerUsed =
+        provider.name;
+
+      console.log(
+        provider.name,
+        "SUCCESS"
+      );
+
+      break;
+
+    } catch (e) {
+
+      console.log(
+        provider.name,
+        "FAILED:",
+        e.message
+      );
+
+    }
+
+  }
+
+  if (!decrypted) {
+
+    return {
+      success: false,
+      error: "All Videasy providers failed"
+    };
+
+  }
+
+console.log(
+  "RAW VIDEASY:",
+  JSON.stringify(
+    decrypted,
+    null,
+    2
+  )
+);
+
+    const streams = [];
+  const subtitles = [];
+
+  for (const source of decrypted.sources) {
+
+    if (!source?.url) continue;
+
+    streams.push({
+      provider: "Videasy",
+      quality: source.quality || "Auto",
+      url: source.url,
+      type: source.url.includes(".m3u8")
+        ? "hls"
+        : "mp4",
+    });
+
+  }
+
+  if (Array.isArray(decrypted.subtitles)) {
+
+    for (const sub of decrypted.subtitles) {
+
+      if (!sub?.url) continue;
+
+      subtitles.push({
+        language:
+          sub.language ||
+          sub.label ||
+          sub.lang ||
+          "Unknown",
+        url: sub.url,
+        type:
+          sub.format ||
+          (sub.url.endsWith(".srt") ? "srt" : "vtt"),
+      });
+
+    }
+
+  }
+
+  console.log(
+    "VIDEASY STREAMS:",
+    streams.length
+  );
+
+  console.log(
+    "VIDEASY SUBTITLES:",
+    subtitles.length
+  );
+
+  return {
+    success: true,
+    provider: providerUsed,
+    streams,
+    subtitles,
+  };
+
+}
+
+
 
 const crypto = require("crypto");
 let netmirrorCookie = "";
@@ -121,7 +422,9 @@ if (req.method === "OPTIONS") {
   res.statusCode = 200;
   return res.end();
 }
-    const pathname = url.parse(req.url).pathname;
+    const parsed = url.parse(req.url, true);
+const pathname = parsed.pathname;
+const query = parsed.query;
 
     if (pathname === "/api/progress" && req.method === "POST") {
 
@@ -196,6 +499,44 @@ if (req.method === "OPTIONS") {
         );
       }
     }
+
+    if (pathname === "/api/videasy") {
+
+  try {
+
+    const result =
+      await getVideasySources(query);
+
+    res.setHeader(
+      "Content-Type",
+      "application/json"
+    );
+
+    return res.end(
+      JSON.stringify(result)
+    );
+
+  } catch (e) {
+
+    console.error(
+      "VIDEASY ERROR:",
+      e
+    );
+
+    res.statusCode = 500;
+
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error: e.message,
+      })
+    );
+
+  }
+
+}
+
+
 
     if (pathname === "/api/vixsrc") {
   try {
