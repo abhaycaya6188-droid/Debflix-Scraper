@@ -631,26 +631,21 @@ const rewritten = text
 
   // rewrite relative ts/m3u8
   .replace(
-    /^([^#\n][^\n]*)$/gm,
-    (line) => {
+  /^([^#\n][^\n]*)$/gm,
+  (line) => {
 
-      if (line.startsWith(base))
-    return line;
+    if (line.startsWith(base)) {
+      return line;
+    }
 
-const full =
-    line.startsWith("http")
+    const full =
+      line.startsWith("http")
         ? line
         : new URL(line, playlistBase).href;
 
-return `${base}/api/hls-proxy?url=${encodeURIComponent(full)}`;
-
-      const full =
-        new URL(line, playlistBase).href;
-
-      return `${base}/api/hls-proxy?url=${encodeURIComponent(full)}`;
-    }
-  );
-
+    return `${base}/api/hls-proxy?url=${encodeURIComponent(full)}`;
+  }
+);
 res.setHeader(
   "Content-Type",
   "application/vnd.apple.mpegurl"
