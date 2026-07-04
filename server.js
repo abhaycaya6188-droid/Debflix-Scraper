@@ -1232,6 +1232,10 @@ rewritten = rewritten.replace(
     `${tunnel}/api/test-playlist?url=${encodeURIComponent(match)}`
 );
 
+
+
+
+
 // encryption key
 rewritten = rewritten.replace(
   /URI="\/storage\/enc\.key"/g,
@@ -1242,9 +1246,21 @@ rewritten = rewritten.replace(
 rewritten = rewritten.replace(
   /https:\/\/sc-[^\s"]+\.ts[^\s"]*/g,
   (match) =>
-    `${tunnel}/api/test-playlist?url=${encodeURIComponent(match)}`
+    `${tunnel}/api/hls-proxy?url=${encodeURIComponent(match)}`
 );
 
+rewritten = rewritten.replace(
+  /URI="([^"]+)"/g,
+  (_, key) => {
+
+    const keyUrl =
+      key.startsWith("http")
+        ? key
+        : new URL(key, playlistUrl).href;
+
+    return `URI="${base}/api/hls-proxy?url=${encodeURIComponent(keyUrl)}"`;
+  }
+);
 
 res.setHeader(
   "Content-Type",
