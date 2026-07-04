@@ -1188,9 +1188,7 @@ return res.end(JSON.stringify({
   success: true,
   debug: {
     search: first,
-    detailsType: details.type,
-    detailsTitle: details.title,
-    detailsId: first.id
+    details: details
   }
 }));
 
