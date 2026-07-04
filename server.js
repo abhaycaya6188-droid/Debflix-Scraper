@@ -1168,26 +1168,38 @@ console.log(detailsBody);
 
 const details = JSON.parse(detailsBody);
 
+
 console.log("DETAILS JSON:");
 console.log(JSON.stringify(details, null, 2));
 
 console.log("SEASONS:");
 console.log(details.season);
 
-    const seasonObj = details.season?.find((item) => {
-  console.log("CHECKING:", item.s, "==", season);
-  return Number(item.s) === Number(season);
-});
+    // -------------------------------
+// MOVIE
+// -------------------------------
 
-console.log("FOUND SEASON:", seasonObj);
+let selectedEpisode;
+
+if (details.type === "m") {
+
+  selectedEpisode = {
+    id: first.id,
+    t: first.t
+  };
+
+} else {
+
+// -------------------------------
+// TV
+// -------------------------------
+
+const seasonObj = details.season?.find(
+  item => Number(item.s) === Number(season)
+);
 
 if (!seasonObj) {
-  return res.end(
-    JSON.stringify({
-      success: false,
-      error: "Season not found"
-    })
-  );
+  throw new Error("Season not found");
 }
 
 const epRes = await fetch(
@@ -1195,34 +1207,27 @@ const epRes = await fetch(
   {
     headers: {
       "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        "Mozilla/5.0",
       "Referer": `${NET_MAIN}/home`,
-      "Cookie": tHash
+      "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
     }
   }
 );
 
-const epText = await epRes.text();
-console.log(epText);
-const epData = JSON.parse(epText);
+const epData = await epRes.json();
 
-const selectedEpisode =
+selectedEpisode =
   epData.episodes?.find(
     e =>
-      String(
-        e.ep.replace("E", "")
-      ) === String(episode)
+      String(e.ep.replace("E","")) === String(episode)
   );
 
 if (!selectedEpisode) {
-  return res.end(
-    JSON.stringify({
-      success: false,
-      error: "Episode not found"
-    })
-  );
+  throw new Error("Episode not found");
 }
 
+}
+  
 // -------------------------------
 // NEW NET11 FLOW
 // -------------------------------
