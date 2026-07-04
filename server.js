@@ -1186,13 +1186,16 @@ let selectedEpisode;
 
 if (details.type === "m") {
 
-  selectedEpisode = {
-    id: first.id,
-    t: first.t
-  };
+  return res.end(JSON.stringify({
+    success: true,
+    debug: {
+      type: details.type,
+      title: details.title,
+      first
+    }
+  }));
 
 } else {
-
 // -------------------------------
 // TV
 // -------------------------------
