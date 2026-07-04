@@ -1167,6 +1167,9 @@ console.log("POST BODY:");
 console.log(detailsBody);
 
 const details = JSON.parse(detailsBody);
+console.log("DETAIL TYPE:", details.type);
+console.log("DETAIL TITLE:", details.title);
+console.log("SEARCH TITLE:", first.t);
 
 
 console.log("DETAILS JSON:");
