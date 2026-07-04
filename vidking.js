@@ -2,6 +2,53 @@ const fetch = global.fetch;
 
 const API = "https://api.wingsdatabase.com";
 
+// ===== VidKing decrypt constants =====
+
+const jl = [
+    1116352408,
+    1899447441,
+    3049323471,
+    3921009573,
+    961987163,
+    1508970993,
+    2453635748,
+    2870763221,
+    3624381080,
+    310598401,
+    607225278,
+    1426881987,
+    1925078388,
+    2162078206,
+    2614888103,
+    3248222580
+];
+
+const Tf = [
+    1732584193,
+    4023233417,
+    2562383102,
+    271733878
+];
+
+const Js = 61;
+const _f = 8;
+const ms = 2654435769;
+
+const Ys = [
+    109,
+    118,
+    109,
+    49
+];
+
+function Sf(v) {
+    return (v * (v + 1) & 1) === 0;
+}
+
+function bf(v) {
+    return (v * (v + 1) & 1) === 1;
+}
+
 const PROVIDERS = [
     "cdn",
     "tejo",
