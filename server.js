@@ -589,10 +589,12 @@ if (pathname === "/api/hls-proxy") {
 
 const base = "https://oracle.debflicks.com";
 
+const originalUrl = decodeURIComponent(playlistUrl);
+
 const playlistBase =
-  playlistUrl.substring(
+  originalUrl.substring(
     0,
-    playlistUrl.lastIndexOf("/") + 1
+    originalUrl.lastIndexOf("/") + 1
   );
 
 const rewritten = text
@@ -611,18 +613,36 @@ const rewritten = text
 
   // rewrite absolute URLs
   .replace(
-    /(https?:\/\/[^\s"]+)/g,
-    (match) =>
-      `${base}/api/hls-proxy?url=${encodeURIComponent(match)}`
-  )
+  /(https?:\/\/[^\s"]+)/g,
+  (match) => {
+
+    // already proxied
+    if (
+      match.startsWith(
+        "https://oracle.debflicks.com/api/hls-proxy"
+      )
+    ) {
+      return match;
+    }
+
+    return `${base}/api/hls-proxy?url=${encodeURIComponent(match)}`;
+  }
+)
 
   // rewrite relative ts/m3u8
   .replace(
     /^([^#\n][^\n]*)$/gm,
     (line) => {
 
-      if (line.startsWith("http"))
-        return line;
+      if (line.startsWith(base))
+    return line;
+
+const full =
+    line.startsWith("http")
+        ? line
+        : new URL(line, playlistBase).href;
+
+return `${base}/api/hls-proxy?url=${encodeURIComponent(full)}`;
 
       const full =
         new URL(line, playlistBase).href;
