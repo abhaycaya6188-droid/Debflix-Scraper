@@ -397,8 +397,9 @@ async function getNetmirrorCookie() {
     }
   });
 
-  const setCookie =
-    res.headers.get("set-cookie") || "";
+  const headers = Object.fromEntries(res.headers.entries());
+
+return headers;
 
   const match =
     setCookie.match(/t_hash_t=([^;]+)/);
