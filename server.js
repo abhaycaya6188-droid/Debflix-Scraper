@@ -630,15 +630,24 @@ const rewritten = text
 )
 
   // rewrite relative ts/m3u8
-  .replace(
+.replace(
   /^([^#\n][^\n]*)$/gm,
   (line) => {
+
+    if (!line.trim()) {
+      return line;
+    }
 
     if (line.startsWith(base)) {
       return line;
     }
 
-    
+    const full =
+      line.startsWith("http")
+        ? line
+        : new URL(line, playlistBase).href;
+
+    return `${base}/api/hls-proxy?url=${encodeURIComponent(full)}`;
   }
 );
 
