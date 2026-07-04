@@ -112,11 +112,15 @@ async function fetchVideasyCipher(endpoint, params) {
     response.status
   );
 
-  if (!response.ok) {
-    throw new Error(
-      `HTTP ${response.status}`
-    );
-  }
+  const body = await response.text();
+
+console.log("VIDEASY STATUS:", response.status);
+console.log("VIDEASY BODY:");
+console.log(body);
+
+if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+}
 
   const cipher =
     (await response.text()).trim();
