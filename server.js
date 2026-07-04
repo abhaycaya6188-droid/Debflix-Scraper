@@ -7,6 +7,7 @@ const { spawn } = require("child_process");
 const db = require("./api/database");
 const vidlinkHandler = require("./api/index");
 const progress = require("./api/progress");
+const vidking = require("./vidking");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
 
@@ -699,6 +700,114 @@ return res.end(rewritten);
 
 }
 
+if (pathname === "/api/vidking") {
+
+  try {
+
+    const result = await vidking.resolve({
+
+      title: query.title || "",
+      mediaType: query.type || "movie",
+      year: query.year || "",
+      tmdbId: Number(query.id),
+      imdbId: query.imdbId || "",
+      seasonId: Number(query.season || 1),
+      episodeId: Number(query.episode || 1)
+
+    });
+
+    const streams = [];
+    const subtitles = [];
+
+    if (Array.isArray(result.sources)) {
+
+      for (const source of result.sources) {
+
+        if (!source.url) continue;
+
+        streams.push({
+
+          provider: "VidKing",
+          quality: source.quality || "Auto",
+
+          url:
+            `https://oracle.debflicks.com/api/hls-proxy?url=${encodeURIComponent(source.url)}`,
+
+          type: "hls"
+
+        });
+
+      }
+
+    }
+
+    if (Array.isArray(result.subtitles)) {
+
+      for (const sub of result.subtitles) {
+
+        if (!sub.url) continue;
+
+        subtitles.push({
+
+          language:
+            sub.language ||
+            sub.label ||
+            "Unknown",
+
+          url: sub.url,
+
+          type:
+            sub.format ||
+            "vtt"
+
+        });
+
+      }
+
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/json"
+    );
+
+    return res.end(
+
+      JSON.stringify({
+
+        success: true,
+
+        provider: "VidKing",
+
+        streams,
+
+        subtitles
+
+      })
+
+    );
+
+  } catch (e) {
+
+    console.error("VIDKING:", e);
+
+    res.statusCode = 500;
+
+    return res.end(
+
+      JSON.stringify({
+
+        success: false,
+
+        error: e.message
+
+      })
+
+    );
+
+  }
+
+}
 
     if (pathname === "/api/vixsrc") {
   try {

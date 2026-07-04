@@ -112,9 +112,335 @@ async function fetchEncrypted(provider, params) {
     };
 }
 
+// ===== VidKing Crypto Helpers =====
+
+function ui(l) {
+    l >>>= 0;
+    l ^= l >>> 16;
+    l = Math.imul(l, 2246822507) >>> 0;
+    l ^= l >>> 13;
+    l = Math.imul(l, 3266489909) >>> 0;
+    l ^= l >>> 16;
+    return l >>> 0;
+}
+
+function ps(l, o) {
+    l >>>= 0;
+    o &= 31;
+
+    return o === 0
+        ? l >>> 0
+        : ((l << o) | (l >>> (32 - o))) >>> 0;
+}
+
+function If(seed) {
+
+    let hash = Tf[0] >>> 0;
+
+    for (let i = 0; i < seed.length; i++) {
+
+        hash = ps(
+            (
+                hash ^
+                Math.imul(
+                    seed.charCodeAt(i),
+                    jl[i & 15]
+                )
+            ) >>> 0,
+            5
+        );
+
+    }
+
+    return ui(hash);
+
+}
+
+function Af(seed) {
+
+    const S = new Array(256);
+
+    for (let i = 0; i < 256; i++) {
+        S[i] = i;
+    }
+
+    let j = 0;
+
+    for (let i = 0; i < 256; i++) {
+
+        j =
+            (
+                j +
+                S[i] +
+                seed.charCodeAt(i % seed.length)
+            ) &
+            255;
+
+        const t = S[i];
+
+        S[i] = S[j];
+
+        S[j] = t;
+
+    }
+
+    return S;
+
+}
+
+function wf(seed) {
+
+    let hash = 2166136261;
+
+    for (let i = 0; i < seed.length; i++) {
+
+        hash =
+            Math.imul(
+                hash ^
+                seed.charCodeAt(i),
+                16777619
+            ) >>> 0;
+
+    }
+
+    return ui(hash);
+
+}
+
+function vf(a, b, c) {
+
+    return (
+        (
+            (a ^ b) >>> 0 |
+            ((a & b & c) >>> 0)
+        ) >>> 0
+    );
+
+}
+
+// ===== VidKing PRNG =====
+
+function Nf(seed, tmdbId) {
+
+    if (bf(seed.length)) {
+
+        return {
+            S: Af(seed),
+            acc: If(seed)
+        };
+
+    }
+
+    const S = new Array(Js);
+
+    let acc =
+        ui(
+            wf(seed) ^
+            ui((tmdbId >>> 0) ^ ms)
+        ) >>> 0;
+
+    for (let i = 0; i < _f; i++) {
+
+        if (Sf(i)) {
+
+            const idx = acc % Js;
+
+            acc =
+                ps(
+                    (acc + ms) >>> 0,
+                    7 + (i & 7)
+                );
+
+            S[idx] =
+                (acc ^ ui(acc)) >>> 0;
+
+            acc =
+                ui(
+                    (acc + idx) >>> 0
+                );
+
+        } else {
+
+            S[i] = jl[i & 15];
+
+        }
+
+    }
+
+    return {
+        S,
+        acc:
+            ui(acc ^ 2779096485) >>> 0
+    };
+
+}
+
+function Rf(state, counter) {
+
+    const S = state.S;
+
+    let acc = state.acc;
+
+    const idx = acc % Js;
+
+    const exists = -(+(idx in S));
+
+    const value = S[idx] >>> 0;
+
+    const mix =
+        Math.imul(
+            ms,
+            counter + 1
+        ) >>> 0;
+
+    let x =
+        vf(
+            acc,
+            (value ^ mix) >>> 0,
+            exists
+        );
+
+    x =
+        (
+            ps(
+                (x + acc) >>> 0,
+                idx & 31
+            ) ^
+            ps(
+                acc,
+                Math.imul(idx, 7) & 31
+            )
+        ) >>> 0;
+
+    acc =
+        ui(
+            (x + ms) >>> 0
+        );
+
+    S[idx] = acc >>> 0;
+
+    state.acc = acc;
+
+    return acc >>> 0;
+
+}
+
+function Cf(seed, tmdbId, length) {
+
+    const state =
+        Nf(seed, tmdbId);
+
+    const out =
+        new Uint8Array(length);
+
+    let counter = 0;
+
+    for (let i = 0; i < length;) {
+
+        const word =
+            Rf(state, counter++);
+
+        out[i++] = word & 255;
+
+        if (i < length)
+            out[i++] =
+                (word >>> 8) & 255;
+
+        if (i < length)
+            out[i++] =
+                (word >>> 16) & 255;
+
+        if (i < length)
+            out[i++] =
+                (word >>> 24) & 255;
+
+    }
+
+    return out;
+
+}
+
+// ===== VidKing Decrypt =====
+
+function xf(data) {
+
+    const b64 =
+        data
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(
+                Math.ceil(data.length / 4) * 4,
+                "="
+            );
+
+    return Uint8Array.from(
+        Buffer.from(b64, "base64")
+    );
+
+}
+
+function Df(encrypted, seed, tmdbId) {
+
+    const bytes = xf(encrypted);
+
+    const stream =
+        Cf(
+            seed,
+            tmdbId,
+            bytes.length
+        );
+
+    for (let i = 0; i < bytes.length; i++) {
+        bytes[i] ^= stream[i];
+    }
+
+    for (let i = 0; i < Ys.length; i++) {
+
+        if (bytes[i] !== Ys[i]) {
+
+            throw new Error(
+                "Decrypt failed (bad seed)"
+            );
+
+        }
+
+    }
+
+    return new TextDecoder()
+        .decode(
+            bytes.subarray(
+                Ys.length
+            )
+        );
+
+}
+
+async function resolve(params) {
+
+    const { seed, encrypted } =
+        await fetchEncrypted(
+            "cdn",
+            params
+        );
+
+    const json =
+        Df(
+            encrypted,
+            seed,
+            parseInt(params.tmdbId)
+        );
+
+    return JSON.parse(json);
+
+}
+
+
 module.exports = {
     API,
     PROVIDERS,
     getSeed,
-    fetchEncrypted
+    fetchEncrypted,
+    resolve,
+    Df,
+    Cf
 };
