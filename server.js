@@ -397,18 +397,22 @@ async function getNetmirrorCookie() {
     }
   });
 
-  console.log("HOME STATUS:", res.status);
-
-  const cookies =
+  const setCookie =
     res.headers.get("set-cookie") || "";
 
-  console.log("HOME COOKIES:");
-  console.log(cookies);
+  const match =
+    setCookie.match(/t_hash_t=([^;]+)/);
 
-  netmirrorCookie = cookies;
+  if (!match) {
+    throw new Error("t_hash_t cookie not found");
+  }
+
+  const tHash = match[1];
+
+  netmirrorCookie = tHash;
   netmirrorCookieTime = Date.now();
 
-  return cookies;
+  return tHash;
 }
   
 
