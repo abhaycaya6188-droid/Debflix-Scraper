@@ -112,7 +112,7 @@ async function fetchVideasyCipher(endpoint, params) {
     response.status
   );
 
-  const body = await response.text();
+  const body = (await response.text()).trim();
 
 console.log("VIDEASY STATUS:", response.status);
 console.log("VIDEASY BODY:");
@@ -122,21 +122,15 @@ if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
 }
 
-  const cipher =
-    (await response.text()).trim();
+const cipher = body;
 
-  if (!cipher) {
-    throw new Error(
-      "Empty ciphertext"
-    );
-  }
+if (!cipher) {
+    throw new Error("Empty ciphertext");
+}
 
-  console.log(
-    "Cipher length:",
-    cipher.length
-  );
+console.log("Cipher length:", cipher.length);
 
-  return cipher;
+return cipher;
 }
 async function getVideasySources(query) {
 
