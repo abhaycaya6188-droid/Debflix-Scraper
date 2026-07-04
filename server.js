@@ -638,14 +638,10 @@ const rewritten = text
       return line;
     }
 
-    const full =
-      line.startsWith("http")
-        ? line
-        : new URL(line, playlistBase).href;
-
-    return `${base}/api/hls-proxy?url=${encodeURIComponent(full)}`;
+    
   }
 );
+
 res.setHeader(
   "Content-Type",
   "application/vnd.apple.mpegurl"
