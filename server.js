@@ -1184,56 +1184,16 @@ console.log(details.season);
 
 let selectedEpisode;
 
-if (details.type === "m") {
-
-  return res.end(JSON.stringify({
-    success: true,
-    debug: {
-      type: details.type,
-      title: details.title,
-      first
-    }
-  }));
-
-} else {
-// -------------------------------
-// TV
-// -------------------------------
-
-const seasonObj = details.season?.find(
-  item => Number(item.s) === Number(season)
-);
-
-if (!seasonObj) {
-  throw new Error("Season not found");
-}
-
-const epRes = await fetch(
-  `${NET_MAIN}/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`,
-  {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0",
-      "Referer": `${NET_MAIN}/home`,
-      "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
-    }
+return res.end(JSON.stringify({
+  success: true,
+  debug: {
+    search: first,
+    detailsType: details.type,
+    detailsTitle: details.title,
+    detailsId: first.id
   }
-);
+}));
 
-const epData = await epRes.json();
-
-selectedEpisode =
-  epData.episodes?.find(
-    e =>
-      String(e.ep.replace("E","")) === String(episode)
-  );
-
-if (!selectedEpisode) {
-  throw new Error("Episode not found");
-}
-
-}
-  
 // -------------------------------
 // NEW NET11 FLOW
 // -------------------------------
