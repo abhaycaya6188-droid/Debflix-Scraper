@@ -585,31 +585,63 @@ if (pathname === "/api/hls-proxy") {
       playlistUrl.includes(".m3u8")
     ) {
 
-      const text =
-        await response.text();
+      const text = await response.text();
 
-      const base =
-"https://oracle.debflicks.com";
+const base = "https://oracle.debflicks.com";
 
-      const rewritten =
-        text.replace(
-          /(https?:\/\/[^\s"]+)/g,
-          (match) =>
-            `${base}/api/hls-proxy?url=${encodeURIComponent(match)}`
-        );
+const playlistBase =
+  playlistUrl.substring(
+    0,
+    playlistUrl.lastIndexOf("/") + 1
+  );
 
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.apple.mpegurl"
-      );
+const rewritten = text
+  // rewrite AES key
+  .replace(
+    /URI="([^"]+)"/g,
+    (_, key) => {
+      const full =
+        key.startsWith("http")
+          ? key
+          : new URL(key, playlistUrl).href;
 
-      res.setHeader(
-        "Access-Control-Allow-Origin",
-        "*"
-      );
+      return `URI="${base}/api/hls-proxy?url=${encodeURIComponent(full)}"`;
+    }
+  )
 
-      return res.end(rewritten);
+  // rewrite absolute URLs
+  .replace(
+    /(https?:\/\/[^\s"]+)/g,
+    (match) =>
+      `${base}/api/hls-proxy?url=${encodeURIComponent(match)}`
+  )
 
+  // rewrite relative ts/m3u8
+  .replace(
+    /^([^#\n][^\n]*)$/gm,
+    (line) => {
+
+      if (line.startsWith("http"))
+        return line;
+
+      const full =
+        new URL(line, playlistBase).href;
+
+      return `${base}/api/hls-proxy?url=${encodeURIComponent(full)}`;
+    }
+  );
+
+res.setHeader(
+  "Content-Type",
+  "application/vnd.apple.mpegurl"
+);
+
+res.setHeader(
+  "Access-Control-Allow-Origin",
+  "*"
+);
+
+return res.end(rewritten);
     }
 
         const buffer =
@@ -1258,7 +1290,7 @@ rewritten = rewritten.replace(
         ? key
         : new URL(key, playlistUrl).href;
 
-    return `URI="${base}/api/hls-proxy?url=${encodeURIComponent(keyUrl)}"`;
+    return `URI="${tunnel}/api/hls-proxy?url=${encodeURIComponent(keyUrl)}"`;
   }
 );
 
