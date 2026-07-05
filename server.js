@@ -704,7 +704,44 @@ return res.end(rewritten);
   }
 
 }
+if (pathname === "/api/test-seed") {
 
+  try {
+
+    const seed =
+      await vidking.getSeed(
+        Number(query.id || 157336)
+      );
+
+    res.setHeader(
+      "Content-Type",
+      "application/json"
+    );
+
+    return res.end(
+      JSON.stringify({
+        success: true,
+        seed
+      })
+    );
+
+  } catch (e) {
+
+    res.setHeader(
+      "Content-Type",
+      "application/json"
+    );
+
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error: e.message
+      })
+    );
+
+  }
+
+}
 if (pathname === "/api/vidking") {
 
   try {
