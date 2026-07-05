@@ -772,11 +772,8 @@ const result =
 
   });
     return res.end(
-      JSON.stringify({
-        success: true,
-        result
-      })
-    );
+    JSON.stringify(result, null, 2)
+);
 
   } catch (e) {
 

@@ -81,8 +81,7 @@ async function getSeed(tmdbId) {
 }
 
 async function fetchEncrypted(provider, params) {
-    throw new Error("FETCHENCRYPTED V2");
-
+    
 const seed =
     params.seed || await getSeed(params.tmdbId);
 
@@ -119,19 +118,19 @@ const text = await res.text();
 
 if (!res.ok) {
 
-    throw new Error(
-        JSON.stringify({
+    return {
 
-            provider,
+        debug: true,
 
-            status: res.status,
+        provider,
 
-            url,
+        status: res.status,
 
-            body: text.substring(0, 500)
+        url,
 
-        })
-    );
+        body: text.substring(0, 500)
+
+    };
 
 }
 
