@@ -445,23 +445,28 @@ function Df(encrypted, seed, tmdbId) {
 
 async function resolve(params) {
 
-    const { seed, encrypted } =
+    const seed =
+        await getSeed(params.tmdbId);
+
+    const { encrypted } =
         await fetchEncrypted(
             "cdn",
-            params
+            {
+                ...params,
+                seed
+            }
         );
 
     const json =
         Df(
             encrypted,
             seed,
-            parseInt(params.tmdbId)
+            Number(params.tmdbId)
         );
 
     return JSON.parse(json);
 
 }
-
 
 module.exports = {
     API,
