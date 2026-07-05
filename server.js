@@ -771,9 +771,14 @@ const result =
     seed
 
   });
-    return res.end(
-    JSON.stringify(result, null, 2)
-);
+    const json =
+    vidking.Df(
+        result.encrypted,
+        result.seed,
+        Number(query.id || 157336)
+    );
+
+return res.end(json);
 
   } catch (e) {
 
