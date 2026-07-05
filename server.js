@@ -742,7 +742,42 @@ if (pathname === "/api/test-seed") {
   }
 
 }
+if (pathname === "/api/test-cdn") {
 
+  try {
+
+    const result =
+      await vidking.fetchEncrypted("cdn", {
+
+        tmdbId: Number(query.id || 157336),
+
+        mediaType: "movie",
+
+        title: "",
+
+        year: "",
+
+        imdbId: "",
+
+        seasonId: 1,
+
+        episodeId: 1
+
+      });
+
+    return res.end(
+      JSON.stringify({
+        success: true,
+        result
+      })
+    );
+
+  } catch (e) {
+
+    return res.end(e.message);
+
+}
+}
 
 if (pathname === "/api/vidking") {
 

@@ -103,15 +103,35 @@ async function fetchEncrypted(provider, params) {
     console.log("VIDKING URL:");
     console.log(url);
 
-    const res = await fetch(url);
-
-    if (!res.ok) {
-        throw new Error(
-            `${provider} HTTP ${res.status}`
-        );
+    const res = await fetch(url, {
+    headers: {
+        "Origin": "https://www.vidking.net",
+        "Referer": "https://www.vidking.net/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9"
     }
+});
 
-    const text = await res.text();
+const text = await res.text();
+
+if (!res.ok) {
+
+    throw new Error(
+        JSON.stringify({
+
+            provider,
+
+            status: res.status,
+
+            url,
+
+            body: text.substring(0, 500)
+
+        })
+    );
+
+}
 
     return {
         seed,
