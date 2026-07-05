@@ -445,9 +445,26 @@ function Df(encrypted, seed, tmdbId) {
 
 async function resolve(params) {
 
-    const seed = await getSeed(params.tmdbId);
+    const seed =
+        await getSeed(params.tmdbId);
 
-    throw new Error("SEED=" + seed);
+    const result =
+        await fetchEncrypted(
+            "cdn",
+            {
+                ...params,
+                seed
+            }
+        );
+
+    const json =
+        Df(
+            result.encrypted,
+            seed,
+            Number(params.tmdbId)
+        );
+
+    return JSON.parse(json);
 
 }
 
