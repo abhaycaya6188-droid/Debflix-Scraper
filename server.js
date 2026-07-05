@@ -746,25 +746,31 @@ if (pathname === "/api/test-cdn") {
 
   try {
 
-    const result =
-      await vidking.fetchEncrypted("cdn", {
+    const seed =
+  await vidking.getSeed(
+    Number(query.id || 157336)
+  );
 
-        tmdbId: Number(query.id || 157336),
+const result =
+  await vidking.fetchEncrypted("cdn", {
 
-        mediaType: "movie",
+    tmdbId: Number(query.id || 157336),
 
-        title: "",
+    mediaType: "movie",
 
-        year: "",
+    title: "",
 
-        imdbId: "",
+    year: "",
 
-        seasonId: 1,
+    imdbId: "",
 
-        episodeId: 1
+    seasonId: 1,
 
-      });
+    episodeId: 1,
 
+    seed
+
+  });
     return res.end(
       JSON.stringify({
         success: true,

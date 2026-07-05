@@ -81,8 +81,9 @@ async function getSeed(tmdbId) {
 }
 
 async function fetchEncrypted(provider, params) {
-
-    const seed = await getSeed(params.tmdbId);
+    
+const seed =
+    params.seed || await getSeed(params.tmdbId);
 
     const query = new URLSearchParams({
         title: params.title || "",
