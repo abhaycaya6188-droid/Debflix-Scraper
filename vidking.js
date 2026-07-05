@@ -58,8 +58,15 @@ const PROVIDERS = [
 ];
 
 async function getSeed(tmdbId) {
-    const res = await fetch(`${API}/seed?mediaId=${tmdbId}`);
-
+    const res = await fetch(`${API}/seed?mediaId=${tmdbId}`, {
+  headers: {
+    "Origin": "https://www.vidking.net",
+    "Referer": "https://www.vidking.net/",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9"
+  }
+});
     if (!res.ok) {
         throw new Error(`Seed HTTP ${res.status}`);
     }
