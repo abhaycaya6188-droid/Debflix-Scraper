@@ -464,7 +464,7 @@ async function resolve(params) {
             Number(params.tmdbId)
         );
 
-    throw new Error(json.substring(0, 500));
+    return JSON.parse(json);
 
 }
 
