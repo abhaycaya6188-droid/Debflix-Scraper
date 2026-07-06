@@ -381,6 +381,71 @@ if (pathname === "/api/cinefreak-search") {
 
 }
 
+if (pathname === "/api/cinefreak") {
+
+  try {
+
+    const id = query.id;
+    const type = query.type || "movie";
+
+    if (!id) {
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Missing TMDB id"
+      }));
+    }
+
+    // TMDB lookup
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
+    );
+
+    const movie = await tmdbRes.json();
+
+    const title =
+      type === "tv"
+        ? movie.name
+        : movie.title;
+
+    if (!title) {
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Title not found"
+      }));
+    }
+
+    const results =
+      await cinefreak.search(title);
+
+    if (!results.length) {
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Nothing found"
+      }));
+    }
+
+    const result =
+      await cinefreak.resolve(results[0].l);
+
+    return res.end(
+      JSON.stringify(result)
+    );
+
+  } catch (e) {
+
+    console.error(e);
+
+    res.statusCode = 500;
+
+    return res.end(JSON.stringify({
+      success: false,
+      error: e.message
+    }));
+
+  }
+
+}
+
 
 
     if (pathname === "/api/videasy") {
