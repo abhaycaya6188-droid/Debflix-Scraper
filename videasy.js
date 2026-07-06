@@ -41,10 +41,40 @@ async function getVideasySources(query) {
 
     const seed = await getSeed(tmdbId);
 
+    const params = new URLSearchParams({
+        title: query.title || "",
+        mediaType: query.type || "movie",
+        year: query.year || "",
+        tmdbId,
+        imdbId: query.imdbId || "",
+        seasonId: query.season || "1",
+        episodeId: query.episode || "1",
+        enc: "2",
+        seed,
+        _t: Date.now().toString()
+    });
+
+    const url =
+        `${VIDEASY_API}/cdn/sources-with-title?${params}`;
+
+    const res = await fetch(url, {
+        headers: {
+            "Origin": "https://www.vidking.net",
+            "Referer": "https://www.vidking.net/",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+    });
+
+    const body = await res.text();
+
     return {
         success: true,
-        stage: "seed",
-        seed
+        seed,
+        status: res.status,
+        bodyLength: body.length,
+        preview: body.substring(0, 300)
     };
 
 }
