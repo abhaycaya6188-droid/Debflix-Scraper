@@ -527,7 +527,10 @@ if (pathname === "/api/test-videasy-1") {
       episodeId: query.episode || "1",
     });
 
-    const provider = videasyProviders[0];
+    const provider =
+  videasyProviders.find(
+    p => p.endpoint === (query.provider || "cdn")
+  ) || videasyProviders[0];
 
     const apiUrl =
       `${VIDEASY_API}/${provider.endpoint}/sources-with-title?${params.toString()}`;
