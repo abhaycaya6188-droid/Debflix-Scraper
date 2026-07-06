@@ -65,12 +65,19 @@ async function generate(downloadUrl) {
 
     // ---------- STEP 1 : GET page ----------
 
-    const getRes = await fetch(
+    let getRes;
+
+try {
+    getRes = await fetch(
         downloadUrl.replace("/w/", "/d/"),
         {
             headers: HEADERS
         }
     );
+} catch (e) {
+    console.error("❌ FAILED: GET /d/");
+    throw e;
+}
 
     const html = await getRes.text();
 
@@ -96,6 +103,8 @@ async function generate(downloadUrl) {
 
     // ---------- STEP 2 : START GENERATION ----------
 
+    try {
+
     await fetch(downloadUrl, {
 
         method: "POST",
@@ -114,6 +123,10 @@ async function generate(downloadUrl) {
 
     });
 
+} catch (e) {
+    console.error("❌ FAILED: POST /w/");
+    throw e;
+}
     // ---------- STEP 3 : POLL ----------
 
     for (let i = 1; i <= 30; i++) {
@@ -122,13 +135,21 @@ async function generate(downloadUrl) {
 
         await new Promise(r => setTimeout(r, 2000));
 
-        const res = await fetch(downloadUrl, {
-            headers: {
-                ...HEADERS,
-                Cookie: cookieHeader
-            }
-        });
+        let res;
 
+try {
+
+    res = await fetch(downloadUrl, {
+        headers: {
+            ...HEADERS,
+            Cookie: cookieHeader
+        }
+    });
+
+} catch (e) {
+    console.error(`❌ FAILED: POLL ${i}`);
+    throw e;
+}
         const page = await res.text();
 
         if (i === 1 || i === 10 || i === 20 || i === 30) {
@@ -142,20 +163,43 @@ async function generate(downloadUrl) {
 
 }
 
+const googleLinks = [
+    ...page.matchAll(/https:\/\/video-downloads\.googleusercontent\.com[^"' ]+/g)
+].map(m => m[0]);
+
+const uniqueLinks = [...new Set(googleLinks)];
+
+console.log("Google links found:", googleLinks.length);
+console.log("Unique Google links:", uniqueLinks.length);
+
+uniqueLinks.forEach((link, i) => {
+    console.log(`Link ${i + 1}: ${link}`);
+});
+
+googleLinks.forEach((link, i) => {
+    console.log(`${i + 1}: ${link.substring(0, 120)}...`);
+});
+
         const match = page.match(
     /href="(https:\/\/video-downloads\.googleusercontent\.com[^"]+)"/i
 );
 
         if (match) {
 
-            console.log("[CINECLOUD] SUCCESS");
+    require("fs").writeFileSync(
+        "cinecloud-success.html",
+        page
+    );
 
-            return {
-                success: true,
-                stream: match[1]
-            };
+    console.log("[CINECLOUD] SUCCESS");
 
-        }
+    return {
+        success: true,
+        stream: match[1]
+    };
+
+}
+
 
     }
 

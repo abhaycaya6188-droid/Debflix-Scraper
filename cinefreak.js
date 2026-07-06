@@ -1,3 +1,4 @@
+
 const cinecloud = require("./cinecloud");
 const cheerio = require("cheerio");
 
@@ -35,57 +36,95 @@ async function page(slug) {
     });
 
     const html = await res.text();
+    const fs = require("fs");
+const path = require("path");
+
+fs.writeFileSync(
+    path.join(__dirname, "movie-page.html"),
+    html
+);
+
+console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
     const $ = cheerio.load(html);
 
-    const links = [];
+const releases = [];
 
-    $("a[href*='generate.php']").each((i, el) => {
+$("h4.movie-title").each((i, titleEl) => {
 
-    links.push({
-        text: $(el).text().trim(),
-        href: $(el).attr("href")
+    const container =
+        $(titleEl).next(".dlbtn-container");
+
+    if (!container.length)
+        return;
+
+    const download =
+        container.find("a:contains('Download Links')");
+
+    if (!download.length)
+        return;
+
+    const href =
+        download.attr("href");
+
+    const full =
+        href.startsWith("http")
+            ? href
+            : BASE + href;
+
+    const id =
+        new URL(full)
+            .searchParams
+            .get("id");
+
+    const decoded =
+        Buffer
+            .from(id, "base64")
+            .toString("utf8")
+            .replace(/newgo32$/i, "");
+
+    const title =
+        $(titleEl)
+            .text()
+            .replace(/\s+/g, " ")
+            .trim();
+
+    const quality =
+        title.match(/2160p|1080p|720p|480p/i)?.[0] || "";
+
+    const codec =
+        title.match(/HEVC|HDR|HD|SD/i)?.[0] || "";
+
+    const brackets =
+    [...title.matchAll(/\[(.*?)\]/g)]
+        .map(x => x[1]);
+
+const size =
+    brackets.at(-1) || "";
+    releases.push({
+
+        title,
+
+        quality,
+
+        codec,
+
+        size,
+
+        generate: full,
+
+        decoded
+
     });
 
 });
 
-    const decoded = links.map(item => {
-
-    const href = item.href.startsWith("http")
-        ? item.href
-        : BASE + item.href;
-
-    try {
-
-        const id = new URL(href)
-            .searchParams
-            .get("id");
-
-        const decoded = Buffer
-    .from(id, "base64")
-    .toString("utf8")
-    .replace(/newgo32$/i, "");
-
 return {
-    text: item.text,
-    generate: href,
-    decoded
-};
 
-    } catch {
+    count: releases.length,
 
-        return {
-            text: item.text,
-            generate: href,
-            decoded: null
-        };
+    links: releases
 
-    }
-
-});
-return {
-    count: decoded.length,
-    links: decoded
 };
 }
 
@@ -131,37 +170,103 @@ async function inspectFile(url) {
 }
 
 async function resolve(slug) {
-    console.log("========== NEW RESOLVE ==========");
 
     const pageResult = await page(slug);
 
-    const download =
-        pageResult.links.find(
-            x => x.text === "Download Links"
-        );
-
-    if (!download) {
-
+    if (!pageResult.links.length) {
         return {
             success: false,
-            error: "Download Links not found"
+            error: "No releases found"
         };
-
     }
 
-    console.log("[DOWNLOAD]", download.decoded);
+    // Best quality first
+    const releases = [...pageResult.links].sort((a, b) => {
 
-    const id =
-        download.decoded.split("/").pop();
+        const score = r => {
 
-    const url =
-        `https://new5.cinecloud.site/w/${id}`;
+            let s = 0;
 
-    console.log("[CINECLOUD]", url);
+            if (r.quality === "2160p") s += 400;
+            else if (r.quality === "1080p") s += 300;
+            else if (r.quality === "720p") s += 200;
+            else if (r.quality === "480p") s += 100;
 
-    return await cinecloud.generate(url);
+            if (r.codec === "HEVC") s += 50;
+            if (r.codec === "HDR") s += 40;
+            if (r.codec === "HD") s += 20;
+
+            return s;
+        };
+
+        return score(b) - score(a);
+
+    });
+
+    const best = releases[0];
+
+    console.log("[CINEFREAK] Default:", best.title);
+
+    const id = best.decoded.split("/").pop();
+
+    let result;
+
+try {
+
+    result = await cinecloud.generate(
+        `https://new5.cinecloud.site/w/${id}`
+    );
+
+} catch (e) {
+
+    console.error("CINECLOUD GENERATE FAILED");
+    console.error(e);
+
+    return {
+        success: false,
+        error: e.message
+    };
 
 }
+
+    if (!result.success) {
+        return result;
+    }
+
+    return {
+
+        success: true,
+
+        default: {
+
+            stream: result.stream,
+
+            quality: best.quality,
+
+            codec: best.codec,
+
+            size: best.size
+
+        },
+
+        qualities: releases.map(r => ({
+
+            id: r.decoded.split("/").pop(),
+
+            quality: r.quality,
+
+            codec: r.codec,
+
+            size: r.size,
+
+            title: r.title
+
+        }))
+
+    };
+
+}
+
 module.exports = {
     search,
     page,
