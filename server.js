@@ -511,68 +511,124 @@ const query = parsed.query;
       }
     }
 
-if (pathname === "/api/test-videasy-1") {
+if (pathname === "/api/test-videasy-new") {
 
   try {
 
     const tmdbId = query.id;
 
+    if (!tmdbId) {
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Missing TMDB id"
+      }));
+    }
+
+    // -----------------------
+    // STEP 1 - Get Seed
+    // -----------------------
+
+    const seedRes = await fetch(
+      `https://api.wingsdatabase.com/seed?mediaId=${tmdbId}`
+    );
+
+    const seedJson = await seedRes.json();
+
+    if (!seedRes.ok || !seedJson.seed) {
+      return res.end(JSON.stringify({
+        success: false,
+        stage: "seed",
+        status: seedRes.status,
+        response: seedJson
+      }, null, 2));
+    }
+
     const params = new URLSearchParams({
+
       title: query.title || "",
-      mediaType: (query.type || "movie").toLowerCase(),
-      year: query.year || "",
+
+      mediaType:
+        (query.type || "movie").toLowerCase(),
+
+      year:
+        query.year || "",
+
       tmdbId,
-      imdbId: query.imdbId || "",
-      seasonId: query.season || "1",
-      episodeId: query.episode || "1",
+
+      imdbId:
+        query.imdbId || "",
+
+      seasonId:
+        query.season || "1",
+
+      episodeId:
+        query.episode || "1",
+
+      enc: "2",
+
+      seed: seedJson.seed
+
     });
 
-    const provider =
-  videasyProviders.find(
-    p => p.endpoint === (query.provider || "cdn")
-  ) || videasyProviders[0];
-
     const apiUrl =
-      `${VIDEASY_API}/${provider.endpoint}/sources-with-title?${params.toString()}`;
+      `https://api.wingsdatabase.com/cdn/sources-with-title?${params.toString()}`;
+
+    // -----------------------
+    // STEP 2 - Get Cipher
+    // -----------------------
 
     const response = await fetch(apiUrl, {
+
       headers: {
+
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/134.0.0.0 Safari/537.36",
-        "Referer": "https://www.vidking.net/",
-        "Origin": "https://www.vidking.net",
-      },
+
+        "Referer":
+          "https://player.videasy.to/",
+
+        "Origin":
+          "https://player.videasy.to"
+
+      }
+
     });
 
     const body = await response.text();
 
     return res.end(JSON.stringify({
+
       success: true,
-      provider: provider.name,
-      endpoint: provider.endpoint,
-      url: apiUrl,
+
+      stage: "cipher",
+
+      seed: seedJson.seed,
+
       status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
+
+      url: apiUrl,
+
       bodyLength: body.length,
-      preview: body.substring(0, 1000)
+
+      preview: body.substring(0, 500)
+
     }, null, 2));
 
   } catch (e) {
 
     return res.end(JSON.stringify({
-    provider: provider.name,
-    endpoint: provider.endpoint,
-    url: apiUrl,
-    status: response.status,
-    headers: Object.fromEntries(response.headers.entries()),
-    bodyLength: body.length,
-    body: body.substring(0, 500)
-}, null, 2));
+
+      success: false,
+
+      error: e.message,
+
+      stack: e.stack
+
+    }, null, 2));
 
   }
 
 }
-
 
 
 
