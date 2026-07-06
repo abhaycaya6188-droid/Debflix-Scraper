@@ -114,6 +114,12 @@ async function fetchVideasyCipher(endpoint, params) {
   );
 
   const body = (await response.text()).trim();
+  console.log("================================");
+console.log("RAW BODY START");
+console.log(body.substring(0, 500));
+console.log("RAW BODY END");
+console.log("Length:", body.length);
+console.log("================================");
 
 console.log("VIDEASY STATUS:", response.status);
 console.log("VIDEASY BODY:");
@@ -222,13 +228,13 @@ async function getVideasySources(query) {
 
     } catch (e) {
 
-      console.log(
-        provider.name,
-        "FAILED:",
-        e.message
-      );
+  console.log("================================");
+  console.log(provider.name, "FAILED");
+  console.log("Message:", e?.message);
+  console.log("Stack:", e?.stack);
+  console.log("================================");
 
-    }
+}
 
   }
 
@@ -504,6 +510,66 @@ const query = parsed.query;
         );
       }
     }
+
+if (pathname === "/api/test-videasy-1") {
+
+  try {
+
+    const tmdbId = query.id;
+
+    const params = new URLSearchParams({
+      title: query.title || "",
+      mediaType: (query.type || "movie").toLowerCase(),
+      year: query.year || "",
+      tmdbId,
+      imdbId: query.imdbId || "",
+      seasonId: query.season || "1",
+      episodeId: query.episode || "1",
+    });
+
+    const provider = videasyProviders[0];
+
+    const apiUrl =
+      `${VIDEASY_API}/${provider.endpoint}/sources-with-title?${params.toString()}`;
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/134.0.0.0 Safari/537.36",
+        "Referer": "https://www.vidking.net/",
+        "Origin": "https://www.vidking.net",
+      },
+    });
+
+    const body = await response.text();
+
+    return res.end(JSON.stringify({
+      success: true,
+      provider: provider.name,
+      endpoint: provider.endpoint,
+      url: apiUrl,
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      bodyLength: body.length,
+      preview: body.substring(0, 1000)
+    }, null, 2));
+
+  } catch (e) {
+
+    return res.end(JSON.stringify({
+      success: false,
+      error: e.message,
+      stack: e.stack
+    }, null, 2));
+
+  }
+
+}
+
+
+
+
+
 
     if (pathname === "/api/videasy") {
 
