@@ -1003,6 +1003,23 @@ if (pathname === "/api/dahmer") {
   }
 }
 
+
+if (pathname === "/api/test-home") {
+
+    const r = await fetch("https://net11.cc/home", {
+        headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36"
+        }
+    });
+
+    return res.end(JSON.stringify({
+        status: r.status,
+        headers: Object.fromEntries(r.headers.entries())
+    }, null, 2));
+}
+
+
 if (pathname === "/api/netmirror") {
 
   
