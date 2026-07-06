@@ -446,7 +446,42 @@ if (pathname === "/api/cinefreak") {
 
 }
 
+if (pathname === "/api/cinefreak/generate") {
 
+  try {
+
+    const id = query.id;
+
+    if (!id) {
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Missing id"
+      }));
+    }
+
+    const result =
+      await cinecloud.generate(
+        `https://new5.cinecloud.site/w/${id}`
+      );
+
+    return res.end(
+      JSON.stringify(result)
+    );
+
+  } catch (e) {
+
+    console.error(e);
+
+    res.statusCode = 500;
+
+    return res.end(JSON.stringify({
+      success: false,
+      error: e.message
+    }));
+
+  }
+
+}
 
     if (pathname === "/api/videasy") {
 
