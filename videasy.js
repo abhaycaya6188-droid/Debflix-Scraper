@@ -4,26 +4,27 @@ const VIDEASY_API = "https://api.wingsdatabase.com";
 
 async function getSeed(tmdbId) {
 
-    const response = await fetch(
-        `${VIDEASY_API}/seed?mediaId=${tmdbId}`,
-        {
-            headers: {
-                "Origin": "https://player.videasy.to",
-                "Referer": "https://player.videasy.to/",
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-                "Accept": "*/*",
-                "Accept-Language": "en-US,en;q=0.9"
-            }
+    const res = await fetch(`${VIDEASY_API}/seed?mediaId=${tmdbId}`, {
+        headers: {
+            "Origin": "https://www.vidking.net",
+            "Referer": "https://www.vidking.net/",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9"
         }
-    );
+    });
 
-    const body = await response.text();
+    if (!res.ok) {
+        throw new Error(`Seed HTTP ${res.status}`);
+    }
 
-    return {
-        status: response.status,
-        headers: Object.fromEntries(response.headers.entries()),
-        body
-    };
+    const json = await res.json();
+
+    if (!json.seed) {
+        throw new Error("Seed missing");
+    }
+
+    return json.seed;
 
 }
 
