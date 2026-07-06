@@ -532,7 +532,17 @@ if (pathname === "/api/test-videasy-new") {
       `https://api.wingsdatabase.com/seed?mediaId=${tmdbId}`
     );
 
-    const seedJson = await seedRes.json();
+    const seedText = await seedRes.text();
+
+return res.end(JSON.stringify({
+
+    status: seedRes.status,
+
+    headers: Object.fromEntries(seedRes.headers.entries()),
+
+    body: seedText.substring(0,1000)
+
+}, null, 2));
 
     if (!seedRes.ok || !seedJson.seed) {
       return res.end(JSON.stringify({
