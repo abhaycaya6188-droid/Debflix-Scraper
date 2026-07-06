@@ -10,6 +10,7 @@ const progress = require("./api/progress");
 const vidking = require("./vidking");
 const { getVideasySources } = require("./videasy");
 const cinefreak = require("./cinefreak");
+const cinecloud = require("./cinecloud");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
 
