@@ -1070,7 +1070,8 @@ if (!first) {
   `${NET_MAIN}/post.php?id=${first.id}&t=${Math.floor(Date.now() / 1000)}`;
 console.log("POST URL:", detailsUrl);
 
-
+console.log("COOKIE TYPE:", typeof tHash);
+console.log("COOKIE VALUE:", tHash);
 console.log("POST COOKIE:");
 console.log(`t_hash_t=${tHash}; hd=on; ott=nf`);
 const detailsRes = await fetch(detailsUrl, {
