@@ -557,10 +557,14 @@ if (pathname === "/api/test-videasy-1") {
   } catch (e) {
 
     return res.end(JSON.stringify({
-      success: false,
-      error: e.message,
-      stack: e.stack
-    }, null, 2));
+    provider: provider.name,
+    endpoint: provider.endpoint,
+    url: apiUrl,
+    status: response.status,
+    headers: Object.fromEntries(response.headers.entries()),
+    bodyLength: body.length,
+    body: body.substring(0, 500)
+}, null, 2));
 
   }
 
