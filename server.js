@@ -9,6 +9,7 @@ const vidlinkHandler = require("./api/index");
 const progress = require("./api/progress");
 const vidking = require("./vidking");
 const { getVideasySources } = require("./videasy");
+const cinefreak = require("./cinefreak");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
 
@@ -338,7 +339,47 @@ return res.end(JSON.stringify({
 
 }
 
+if (pathname === "/api/cinefreak-search") {
 
+  try {
+
+    const title = query.title;
+
+    const results =
+      await cinefreak.search(title);
+
+    if (!results.length) {
+
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Nothing found"
+      }));
+
+    }
+
+    const result =
+      await cinefreak.resolve(
+        results[0].l
+      );
+
+    return res.end(
+      JSON.stringify(result, null, 2)
+    );
+
+  } catch (e) {
+
+    console.error(e);
+
+    res.statusCode = 500;
+
+    return res.end(JSON.stringify({
+      success: false,
+      error: e.message
+    }));
+
+  }
+
+}
 
 
 
