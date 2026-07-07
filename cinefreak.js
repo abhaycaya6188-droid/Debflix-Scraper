@@ -267,8 +267,82 @@ try {
 
 }
 
+async function resolveQualities(slug) {
+
+    const pageResult = await page(slug);
+
+    if (!pageResult.links.length) {
+        return {
+            success: false,
+            error: "No releases found"
+        };
+    }
+
+    // Skip the first release because it's already used by resolve()
+    const releases = pageResult.links.slice(1);
+
+    const jobs = releases.map(async (release) => {
+
+        const id = release.decoded.split("/").pop();
+
+        try {
+
+            const result = await cinecloud.generate(
+                `https://new5.cinecloud.site/w/${id}`
+            );
+
+            if (!result.success)
+                return null;
+
+            return {
+
+                stream: result.stream,
+
+                quality: release.quality,
+
+                codec: release.codec,
+
+                size: release.size,
+
+                title: release.title
+
+            };
+
+        } catch (e) {
+
+            console.log(
+                "[CINEFREAK] Failed:",
+                release.title
+            );
+
+            return null;
+
+        }
+
+    });
+
+    const resolved =
+        await Promise.allSettled(jobs);
+
+    const streams =
+        resolved
+            .filter(r => r.status === "fulfilled")
+            .map(r => r.value)
+            .filter(Boolean);
+
+    return {
+
+        success: true,
+
+        streams
+
+    };
+
+}
+
 module.exports = {
     search,
     page,
-    resolve
+    resolve,
+    resolveQualities
 };
