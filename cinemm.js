@@ -265,6 +265,10 @@ async function getMovieServers(movieId) {
 
     );
 
+    console.log("========== RAW MOVIE RESPONSE ==========");
+console.log(text);
+console.log("========================================");
+
     await fs.writeFile(
         "cinemm-movie.txt",
         text
