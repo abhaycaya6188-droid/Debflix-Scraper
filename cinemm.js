@@ -89,11 +89,16 @@ async function post(url, action, referer, body) {
 
     };
 
+    // Don't send cookies when creating a new session
+if (action !== INIT_ACTION) {
+
     const cookie =
         cookieHeader();
 
     if (cookie)
         headers.Cookie = cookie;
+
+}
 
     const res = await fetch(url, {
 
@@ -114,6 +119,12 @@ async function post(url, action, referer, body) {
 }
 
 async function initSession() {
+
+    // Force a completely fresh session
+    delete COOKIE_JAR.user_uuid;
+    delete COOKIE_JAR.client_ip;
+
+    console.log("COOKIE JAR CLEARED");
 
     const text = await post(
 
@@ -140,13 +151,17 @@ async function initSession() {
                 .exec(text)?.[1] || 0
         );
 
-    return {
+    console.log("NEW UUID :", uuid);
+console.log("REMAINING:", remaining);
+console.log("COOKIE JAR:", COOKIE_JAR);
 
-        uuid,
+return {
 
-        remaining
+    uuid,
 
-    };
+    remaining
+
+};
 
 }
 

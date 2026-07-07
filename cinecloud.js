@@ -105,23 +105,25 @@ try {
 
     try {
 
-    await fetch(downloadUrl, {
+    const postRes = await fetch(downloadUrl, {
+    method: "POST",
+    headers: {
+        ...HEADERS,
+        Cookie: cookieHeader,
+        Referer: downloadUrl.replace("/w/", "/d/"),
+        Origin: "https://new5.cinecloud.site",
+        "X-Requested-With": "XMLHttpRequest"
+    },
+    body: new URLSearchParams({
+        csrf_test_name: csrf
+    })
+});
 
-        method: "POST",
+console.log("POST STATUS:", postRes.status);
 
-        headers: {
-            ...HEADERS,
-            Cookie: cookieHeader,
-            Referer: downloadUrl.replace("/w/", "/d/"),
-            Origin: "https://new5.cinecloud.site",
-            "X-Requested-With": "XMLHttpRequest"
-        },
+const postBody = await postRes.text();
 
-        body: new URLSearchParams({
-            csrf_test_name: csrf
-        })
-
-    });
+console.log(postBody.substring(0, 500));
 
 } catch (e) {
     console.error("❌ FAILED: POST /w/");
