@@ -11,6 +11,7 @@ const vidking = require("./vidking");
 const { getVideasySources } = require("./videasy");
 const cinefreak = require("./cinefreak");
 const cinecloud = require("./cinecloud");
+const cinemm = require("./cinemm");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
 
@@ -335,6 +336,106 @@ return res.end(JSON.stringify({
       stack: e.stack
 
     }, null, 2));
+
+  }
+
+}
+
+
+if (pathname === "/api/cinemm") {
+
+  try {
+
+    const id = query.id;
+
+    const type = query.type || "movie";
+
+    if (!id) {
+
+      return res.end(JSON.stringify({
+
+        success: false,
+
+        error: "Missing TMDB id"
+
+      }));
+
+    }
+
+    // -----------------------
+    // TMDB Lookup
+    // -----------------------
+
+    const tmdbRes = await fetch(
+
+      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
+
+    );
+
+    const media = await tmdbRes.json();
+
+    const title =
+      type === "tv"
+        ? media.name
+        : media.title;
+
+    const year = (
+
+      type === "tv"
+        ? media.first_air_date
+        : media.release_date
+
+    )?.split("-")[0];
+
+    if (!title) {
+
+      return res.end(JSON.stringify({
+
+        success: false,
+
+        error: "Title not found"
+
+      }));
+
+    }
+
+    // -----------------------
+    // CineMM
+    // -----------------------
+
+    const streams = await cinemm.getStreams({
+
+      title,
+
+      year,
+
+      type
+
+    });
+
+    return res.end(JSON.stringify({
+
+      success: true,
+
+      provider: "CineMM",
+
+      streams
+
+    }));
+
+  } catch (e) {
+
+    console.error("CINEMM:", e);
+
+    res.statusCode = 500;
+
+    return res.end(JSON.stringify({
+
+      success: false,
+
+      error: e.message
+
+    }));
 
   }
 
