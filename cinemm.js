@@ -407,14 +407,16 @@ const movies =
         title,
         type
     );
-
+console.log("[CINEMM] Movies Found:");
+console.log(movies);
 const movie =
     pickMovie(
         movies,
         title,
         year
     );
-
+console.log("[CINEMM] Picked Movie:");
+console.log(movie);
 if (!movie) {
 
     return [];
@@ -425,6 +427,9 @@ const servers =
     await getMovieServers(
         movie.id
     );
+console.log("[CINEMM] Servers Found:");
+console.log(servers.length);
+
 
 if (!servers.length) {
 
