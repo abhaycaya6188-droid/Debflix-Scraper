@@ -2,8 +2,9 @@
   "name": "vidlink-fetcher",
   "version": "1.0.0",
   "scripts": {
-    "start": "node server.js"
-  },
+  "start": "node server.js",
+  "postinstall": "npx playwright install chromium"
+},
   "dependencies": {
     "better-sqlite3": "^12.11.1",
     "cheerio": "^1.2.0",
