@@ -61,6 +61,46 @@ console.log("HAS Just a moment:", html.includes("Just a moment"));
 console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
     const $ = cheerio.load(html);
+
+    console.log("========== SINGLE EPISODE SECTION ==========");
+
+$("h3").each((i, el) => {
+
+    const text = $(el).text().trim();
+
+    if (text.includes("Single Episode")) {
+
+        console.log("FOUND:", text);
+
+        const parent = $(el).parent();
+
+        console.log(parent.html());
+
+    }
+
+});
+
+console.log("========== ALL WATCH LINKS ==========");
+
+$("a").each((i, el) => {
+
+    const text = $(el).text().trim();
+    const href = $(el).attr("href");
+
+    if (
+        text.includes("Watch") ||
+        (href && href.includes("/x/"))
+    ) {
+
+        console.log({
+            text,
+            href,
+            class: $(el).attr("class")
+        });
+
+    }
+
+});
     console.log("BODY START:");
 console.log($("body").html()?.substring(0, 2000));
     console.log("ROOT HTML TAG:", $.root().children().first()[0]?.tagName);
