@@ -62,160 +62,64 @@ console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
     const $ = cheerio.load(html);
 
-    console.log("========== SINGLE EPISODE SECTION ==========");
-
-$("h3").each((i, el) => {
-
-    const text = $(el).text().trim();
-
-    if (text.includes("Single Episode")) {
-
-        console.log("FOUND:", text);
-
-        const parent = $(el).parent();
-
-        console.log(parent.html());
-
-    }
-
-});
-
-console.log("========== ALL WATCH LINKS ==========");
-
-$("a").each((i, el) => {
-
-    const text = $(el).text().trim();
-    const href = $(el).attr("href");
-
-    if (
-        text.includes("Watch") ||
-        (href && href.includes("/x/"))
-    ) {
-
-        console.log({
-            text,
-            href,
-            class: $(el).attr("class")
-        });
-
-    }
-
-});
-    console.log("BODY START:");
-console.log($("body").html()?.substring(0, 2000));
-    console.log("ROOT HTML TAG:", $.root().children().first()[0]?.tagName);
-
-console.log("BODY EXISTS:", $("body").length);
-
-console.log("FIRST 5 TAGS:");
-
-$("*").slice(0, 5).each((i, el) => {
-    console.log(i, el.tagName, $(el).attr("class"));
-});
-    console.log("ELEMENTS WITH movie-title CLASS:");
-
-$('[class*="movie-title"]').each((i, el) => {
-
-    console.log({
-        tag: el.tagName,
-        class: $(el).attr("class"),
-        text: $(el).text().trim().substring(0, 80)
-    });
-
-});
-console.log("ELEMENTS WITH dlbtn:");
-
-$('[class*="dlbtn"]').each((i, el) => {
-
-    console.log({
-        tag: el.tagName,
-        class: $(el).attr("class"),
-        text: $(el).text().trim()
-    });
-
-});
-
-
-console.log("DL CONTAINERS:", $(".dlbtn-container").length);
-console.log("ALL H4:", $("h4").length);
-console.log("ALL A:", $("a").length);
-
-$("h4").each((i, el) => {
-    console.log("H4:", $(el).text().trim());
-});
-
 const releases = [];
 
-$("h4.movie-title").each((i, titleEl) => {
+$(".ep-card").each((i, card) => {
 
-    const container =
-        $(titleEl).next(".dlbtn-container");
-
-    if (!container.length)
-        return;
-
-    const download =
-        container.find("a:contains('Download Links')");
-
-    if (!download.length)
-        return;
-
-    const href =
-        download.attr("href");
-
-    const full =
-        href.startsWith("http")
-            ? href
-            : BASE + href;
-console.log("DOWNLOAD URL:", full);
-
-
-    const id =
-        new URL(full)
-            .searchParams
-            .get("id");
-
-    const decoded =
-        Buffer
-            .from(id, "base64")
-            .toString("utf8")
-            .replace(/newgo32$/i, "");
-
-    const title =
-        $(titleEl)
+    const episode =
+        $(card)
+            .find(".episode-badge")
             .text()
-            .replace(/\s+/g, " ")
             .trim();
 
-    const quality =
-        title.match(/2160p|1080p|720p|480p/i)?.[0] || "";
+    $(card)
+        .find(".watch-links a")
+        .each((j, a) => {
 
-    const codec =
-        title.match(/HEVC|HDR|HD|SD/i)?.[0] || "";
+            const href = $(a).attr("href");
 
-    const brackets =
-    [...title.matchAll(/\[(.*?)\]/g)]
-        .map(x => x[1]);
+            if (!href)
+                return;
 
-const size =
-    brackets.at(-1) || "";
-    releases.push({
+            const full =
+                href.startsWith("http")
+                    ? href
+                    : BASE + href;
 
-        title,
+            const encoded =
+                new URL(full)
+                    .searchParams
+                    .get("id");
 
-        quality,
+            if (!encoded)
+                return;
 
-        codec,
+            const decoded =
+                Buffer
+                    .from(encoded, "base64")
+                    .toString("utf8")
+                    .replace(/newgo32$/i, "");
 
-        size,
+            releases.push({
 
-        generate: full,
+                episode,
 
-        decoded
+                title: $(a).text().trim(),
 
-    });
+                quality: $(a).text().match(/2160p|1080p|720p|480p/i)?.[0] || "",
+
+                codec: $(a).text().match(/HEVC|HDR|AV1|H\.?264/i)?.[0] || "",
+
+                watch: decoded
+
+            });
+
+        });
 
 });
+
+console.log("[CINEFREAK] RELEASES FOUND:", releases.length);
+console.dir(releases, { depth: null });
 
 return {
 
