@@ -123,8 +123,7 @@ return headers;
 }
   
 
-http
-  .createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
 res.setHeader("Access-Control-Allow-Headers", "*");
 res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
@@ -1735,8 +1734,8 @@ if (pathname === "/api/test-netmirror-cookie") {
 
 return vidlinkHandler(req, res);
 
-})
-app.listen(PORT, () => {
-    console.log(`Server running on ${PORT}`);
+});
 
+server.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
 });
