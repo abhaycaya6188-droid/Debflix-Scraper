@@ -1,0 +1,22 @@
+{
+  "url": "https://cinemm.com/",
+  "method": "POST",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+    "x-action-revalidated": "[[],0,1]",
+    "content-encoding": "zstd",
+    "x-opennext": "1",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=8hq2J8pwypZ9qDJhbjgZQ6oLV5LBQqBpPDy4TXJdBbQ%2FuNsMmu6vEsZpLpUa%2BHhyNHN27MytGrtQzwqWZDCax%2FO6vq7hcwtFZyu3As0hkgkgkP1sjA0SSOadkfBK\"}]}",
+    "cf-ray": "a1751ea9de824236-BOM",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "server-timing": "cfExtPri",
+    "date": "Tue, 07 Jul 2026 07:26:14 GMT",
+    "content-type": "text/x-component",
+    "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "server": "cloudflare",
+    "priority": "u=1,i",
+    "x-client-ip": "203.192.225.233"
+  }
+}

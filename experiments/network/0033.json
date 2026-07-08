@@ -1,0 +1,21 @@
+{
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-BZXKY270HF&gtm=45je6711v9238827155za200zd9238827155&_p=1783409170760&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAAQ&ae=a&are=1&cid=773482113.1783409171&frm=0&pscdl=noapi&rcb=3&sr=1280x720&uaa=arm&uab=64&uafvl=Chromium%3B149.0.7827.55%7CNot)A%253BBrand%3B24.0.0.0&uam=&uamb=0&uap=macOS&uapv=26.5.1&uaw=0&ul=en-us&_s=5&tag_exp=115938466~115938468~118897920~118897930~119027224~119576881~119576885~119576891~119576895&sid=1783409170&sct=1&seg=1&dl=https%3A%2F%2Fcinemm.com%2F%3Fsearch%3Dobsession%26type%3Dmovie&dr=https%3A%2F%2Fcinemm.com%2F&dt=CineMM%20-%20Search%20Movies%20%26%20Series%20with%20Myanmar%20Subtitles&en=click&ep.link_id=&ep.link_classes=&ep.link_url=https%3A%2F%2Fstream.cmreel.com%2Ffile%2F2025-step-190425%2FMovie-2025-Step%2F003%2FMin%2520Wai%2F2026%2520Movie%2FJune%25202026%2FObsession%2520%25282026%2529%2520WEB-DL%252C1080p%2520HEVC%2520%2528MW%2529.mkv&ep.link_domain=stream.cmreel.com&ep.outbound=true&_et=6993&tfd=25760",
+  "method": "POST",
+  "status": 204,
+  "headers": {
+    "cache-control": "no-cache, no-store, must-revalidate",
+    "pragma": "no-cache",
+    "cross-origin-resource-policy": "cross-origin",
+    "access-control-allow-credentials": "true",
+    "content-security-policy-report-only": "script-src 'none'; form-action 'none'; frame-src 'none'; report-uri https://csp.withgoogle.com/csp/scaffolding/ascnsrsggc:138:0",
+    "report-to": "{\"group\":\"ascnsrsggc:138:0\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/scaffolding/ascnsrsggc:138:0\"}],}",
+    "expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+    "access-control-allow-origin": "https://cinemm.com",
+    "cross-origin-opener-policy-report-only": "same-origin; report-to=ascnsrsggc:138:0",
+    "content-length": "0",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+    "date": "Tue, 07 Jul 2026 07:26:35 GMT",
+    "content-type": "text/plain",
+    "server": "Golfe2"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "url": "https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496",
+  "method": "GET",
+  "status": 200,
+  "headers": {
+    "cache-control": "public, max-age=86400",
+    "content-encoding": "gzip",
+    "etag": "W/\"2026.6.0\"",
+    "cross-origin-resource-policy": "cross-origin",
+    "cf-ray": "a1751e94a88effa1-BOM",
+    "access-control-allow-origin": "*",
+    "date": "Tue, 07 Jul 2026 07:26:10 GMT",
+    "content-type": "text/javascript;charset=UTF-8",
+    "last-modified": "Thu, 18 Jun 2026 14:05:09 GMT",
+    "server": "cloudflare"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "url": "https://cinemm.com/_next/static/chunks/app/layout-54e45c2450000ec0.js",
+  "method": "GET",
+  "status": 200,
+  "headers": {
+    "cache-control": "public, max-age=0, must-revalidate",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "content-encoding": "zstd",
+    "cf-cache-status": "HIT",
+    "etag": "W/\"13014bd49fb61bee2159aae7dea72f89\"",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=pbqJVBpOWR1EvYzKfXSMqgapbL67QnItxpQ1UVSNblAQWu0PyMWGAzT77owm1caQmsvsQX5Dx9iQ00wT48Uh0%2FUqRNDWI%2B6%2BKZDSbZqIoDSGz2BlwBLH3BHHdCKT\"}]}",
+    "cf-ray": "a1751e941a893c34-BOM",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "date": "Tue, 07 Jul 2026 07:26:10 GMT",
+    "content-type": "text/javascript",
+    "server": "cloudflare"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "url": "https://cinemm.com/cdn-cgi/rum?",
+  "method": "POST",
+  "status": 204,
+  "headers": {
+    "access-control-max-age": "86400",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=%2BvXsRbj3irarGi2gRsBSt0oWJK8AGGPlgFgRMZIEH5tndo3Ik20mF7ja5hPQMNGfMxuc3YWEB3acZRj%2BcopO4waK%2FMIrSJLH2N9Ua3DN56WjGpQ7Z69TJzBbCmpg\"}]}",
+    "access-control-allow-credentials": "true",
+    "access-control-allow-methods": "POST,OPTIONS",
+    "cf-ray": "a1751e95ce074236-BOM",
+    "access-control-allow-origin": "https://cinemm.com",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "server-timing": "cfExtPri",
+    "date": "Tue, 07 Jul 2026 07:26:10 GMT",
+    "content-type": "text/plain",
+    "vary": "Origin",
+    "server": "cloudflare",
+    "priority": "u=1,i"
+  }
+}

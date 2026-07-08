@@ -1,0 +1,100 @@
+2:"$Sreact.fragment"
+3:I[1402,["177","static/chunks/app/layout-54e45c2450000ec0.js"],""]
+4:I[9766,[],""]
+5:I[8924,[],""]
+7:I[4431,[],"OutletBoundary"]
+9:I[5278,[],"AsyncMetadataOutlet"]
+b:I[4431,[],"ViewportBoundary"]
+d:I[4431,[],"MetadataBoundary"]
+e:"$Sreact.suspense"
+0:{"a":"$@1","f":[[["",{"children":["__PAGE__?{\"search\":\"obsession\",\"type\":\"movie\"}",{}]},"$undefined","$undefined",true],["",["$","$2","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/10fab229a2437e00.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","$L3",null,{"src":"https://www.googletagmanager.com/gtag/js?id=G-BZXKY270HF","strategy":"afterInteractive"}],["$","$L3",null,{"id":"google-analytics","strategy":"afterInteractive","children":"\n            window.dataLayer = window.dataLayer || [];\n            function gtag(){dataLayer.push(arguments);}\n            gtag('js', new Date());\n            gtag('config', 'G-BZXKY270HF');\n          "}],["$","$L3",null,{"id":"service-worker","strategy":"afterInteractive","children":"\n            if ('serviceWorker' in navigator) {\n              window.addEventListener('load', function() {\n                navigator.serviceWorker.register('/sw.js').then(\n                  function(registration) {\n                    console.log('ServiceWorker registration successful');\n                  },\n                  function(err) {\n                    console.log('ServiceWorker registration failed: ', err);\n                  }\n                );\n              });\n            }\n          "}]]}],["$","body",null,{"className":"__className_f367f3","children":["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":["__PAGE__",["$","$2","c",{"children":["$L6",null,["$","$L7",null,{"children":["$L8",["$","$L9",null,{"promise":"$@a"}]]}]]}],{},null,false]},null,false],["$","$2","h",{"children":[null,["$","$2","TP0by9cMqHxLT2pqy5feIv",{"children":[["$","$Lb",null,{"children":"$Lc"}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],["$","$Ld","TP0by9cMqHxLT2pqy5feIm",{"children":["$","div",null,{"hidden":true,"children":["$","$e",null,{"fallback":null,"children":"$Lf"}]}]}]]}],false]],"b":"y3cRx54OVwBOP1fHP21gt"}
+10:T1f38,Obsession (2026) 4K HEVC 
++++++++++++
+
+IMDb Rating (8.1) / Rotten Tomatoes (94%)
+
+၂၀၂၅ ခုနှစ်ရဲ့ အဟော့ဆုံးနဲ့ အကြမ်းဆုံး Horror ကားကို ပြပါဆိုရင်တော့ ဒါရိုက်တာ Curry Barker ရိုက်ကူးထားတဲ့ 
+
+"Obsession" ကိုပဲ ပြရမှာပါ။
+
+ ဒီကားက ဘတ်ဂျက်နည်းနည်းလေးနဲ့ ရိုက်ထားတာဆိုပေမဲ့ တကယ့်ကို အောင်မြင်မှုတွေ အများကြီး ရထားတဲ့ကားဆိုတော့ 
+
+ရုပ်ရှင်ချစ်သူတွေ ကြည့်ကိုကြည့်သင့်တဲ့ကားစာရင်းထဲမှာ ပါပါတယ်။
+
+ဇာတ်လမ်းအကျဉ်း
++++++++++++
+
+ဇာတ်လမ်းလေးက ဘယ်လိုလဲဆိုတော့... အဓိက ဇာတ်ကောင် "Bear" (Michael Johnston) က သူ့ရဲ့ ငယ်သူငယ်ချင်း 
+
+ကောင်မလေး "Nikki" (Inde Navarrette) ကို ကြိတ်ကြိုက်နေတာပါ။ 
+
+တစ်ရက်ကျတော့ Bear က ဆိုင်တစ်ဆိုင်ကနေ 'One Wish Willow' လို့ခေါ်တဲ့ ဆုတောင်းပြည့် အဆောင်လေးတစ်ခုကို ဝယ်လာခဲ့တယ်။ 
+
+အဲဒီသစ်ကိုင်းကို ချိုးပြီး ဆုတောင်းရင် တစ်ယောက်ကို ဆုတစ်ခါ တောင်းလို့ရတယ်ဆိုတော့ကာ... Bear က "Nikki တစ်ယောက် 
+
+ငါ့ကို ကမ္ဘာပေါ်မှာ အချစ်ဆုံးဖြစ်ပါစေ" ဆိုပြီး ဆုတောင်းလိုက်ရော။
+
+ဆုတောင်းပြည့်သွားလားဆိုတော့ ချက်ချင်းကို ပြည့်သွားပါတယ်။ ဒါပေမဲ့ ပြဿနာက အဲဒီဆုတောင်းရဲ့ အကျိုးဆက်က တော်တော်လေးကို 
+
+ကြောက်စရာကောင်းပြီး ဆိုးရွားလွန်းနေတာပါပဲ။ 
+
+Nikki ရဲ့ အပြုအမူတွေက သာမန်မဟုတ်တော့ဘဲ ကြောက်စရာကောင်းတဲ့ အရာတစ်ခုခုက သူ့ကို ခြယ်လှယ်နေသလိုမျိုး ဖြစ်လာတဲ့အခါ 
+
+ဘာတွေ ဆက်ဖြစ်မလဲဆိုတာ ရင်တမမနဲ့ ကြည့်ရမယ့် Supernatural Horror နဲ့ Dark Comedy ရောထားတဲ့ ကားလေးပါ။
+
+ဘတ်ဂျက်က ဒေါ်လာ ၇ သိန်းခွဲ ကနေ ၁ သန်း ဝန်းကျင်လောက်ပဲ သုံးထားတာပါ။ 
+
+ဒါပေမဲ့ ရုံတင်တဲ့အခါမှာတော့ ရုံဝင်ငွေ ဒေါ်လာ ၁၉၄ သန်းကျော်အထိ ရသွားပြီး Focus Features ကုမ္ပဏီ သမိုင်းတစ်လျှောက် 
+
+ဝင်ငွေအကောင်းဆုံး စံချိန်တင်ကားကြီး (Downton Abbey ကိုပါ ကျော်သွားတာ) ဖြစ်သွားပါတယ်။
+
+တိုရွန်တို နိုင်ငံတကာ ရုပ်ရှင်ပွဲတော် (TIFF) မှာ ပြတုန်းကလည်း ဖြန့်ချိခွင့်အတွက် ဒေါ်လာ ၁၄-၁၅ သန်းအထိ အပေးခံခဲ့ရလို့ TIFF သမိုင်းမှာ 
+
+Horror/Genre ကားတွေထဲ ဈေးအမြင့်ဆုံးရတဲ့ကားအဖြစ် မှတ်တမ်းဝင်ခဲ့ပါတယ်။ အဲဒီပွဲအပြီးမှာ နာမည်ကြီး Blumhouse Productions က 
+
+ထုတ်လုပ်သူ Jason Blum ပါ ဝင်ပါလာခဲ့ပါတယ်။
+
+သရုပ်ဆောင်တွေကလည်း နာမည်ကြီးတွေ မဟုတ်သလို၊ ဒါရိုက်တာ Curry Barker ဆိုရင်လည်း ဒါက သူ့ရဲ့ ပထမဆုံးရိုက်တဲ့ Feature Film ပါ။ 
+
+ဒါပေမဲ့ ပရိသတ်တွေကြားမှာ သေသေချာချာ ဆွေးနွေးလာစေလောက်တဲ့အထိ အင်တာနက်မှာ တော်တော်လေး ဟော့ဖြစ်သွားခဲ့ပါတယ်။
+
+ဒါရိုက်တာက သူငယ်ချင်းတွေနဲ့အတူ The Simpsons ကာတွန်းကားရဲ့ "Treehouse of Horror II" အပိုင်း (Homer က Monkey's 
+
+Paw နဲ့ ဆုတောင်းတဲ့အပိုင်း) ကို ကြည့်ရင်းကနေ ဒီဇာတ်လမ်း အိုင်ဒီယာကို ရသွားတာပါ။
+
+စတူဒီယိုဘက်က ဇာတ်ကောင် Bear ကို "လူကောင်း (Hero)" ပုံစံမျိုး ပြင်ရေးပေးရင် ဒေါ်လာ ၂ သန်း ပေးမယ်လို့ ကမ်းလှမ်းခဲ့သေးတယ်။ 
+
+ဒါပေမဲ့ ဒါရိုက်တာက သူ့ရဲ့ မူလဇာတ်လမ်း အတိုင်းပဲ အသက်ဝင်စေချင်လို့ အဲဒီပိုက်ဆံကို ငြင်းခဲ့ပါတယ်။
+
+ဇာတ်လမ်းထဲက အဓိကကျတဲ့ "One Wish Willow" သစ်ကိုင်းလေးရဲ့ ဒီဇိုင်းကို ဒါရိုက်တာက Graphic Designer ဖြစ်တဲ့ သူ့အမေနဲ့ 
+
+အတူတူ ဖန်တီးခဲ့တာပါ။
+
+"Obsession" (2025) ကားထဲက Nikki နေရာမှာ အပိုင်သရုပ်ဆောင်သွားတဲ့ မင်းသမီးချောလေးရဲ့ နာမည်ရင်းကတော့ Danielle 
+
+Fabiola Navarrette (ဒန်နီရဲလ် ဖေဘီယိုလာ နာဗာရက်တီ) ပါ။ 
+
+ဒါပေမဲ့ ပရိသတ်တွေကတော့ သူ့ကို Inde Navarrette (အင်ဒီ နာဗာရက်တီ) ဆိုတဲ့ နာမည်နဲ့ ပိုသိကြပါတယ်။ နာမည်မရှိတဲ့ 
+
+ဂိမ်းစထရင်မာ သရုပ်ဆောင်မျက်နှာသစ်ဘဝကနေ ဟောလိဝုကြယ်ပွင့်တစ်ပွင့် ဖြစ်လာတော့မှာပါပဲ။ 
+
+ဇာတ်လမ်းက ရိုးရှင်းပေမဲ့ အလင်းအမှောင် သုံးသွားတဲ့ Cinematography တွေရော၊ သရုပ်ဆောင်တွေရဲ့ အိုက်တင်တွေပါ 
+
+အရမ်းမိုက်လို့ Horror ကားကြိုက်တဲ့သူတွေ လက်မလွတ်သင့်တဲ့ ၂၀၂၅ ရဲ့ Masterpiece လေးတစ်ခုလို့ပဲ ညွှန်းလိုက်ပါရစေ။
+
+
+
+
+File Size… (3.6GB) / (1.01GB) / (674MB)
+Quality… WEB-DL 4K HEVC/ 1080p HEVC / 720p
+Format…mkv / mp4
+Duration…1h 48m
+Genre ….Horror , Romance , Thriller                
+Subtitle….Myanmar Subtitle (Hard Sub)1:{"servers":[{"name":"Tube 1 (4K) - Stream","size":"3.6GB","url":"https://stream.cmreel.com/file/2025-step-190425/Movie-2025-Step/002/4K/Obsession.2025.2160p.WEB-DL.DDP5.1.H.265.mkv"},{"name":"Tube 1 (1080p) - Stream","size":"1.01GB","url":"https://stream.cmreel.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C1080p%20HEVC%20%28MW%29.mkv"},{"name":"Tube 1 (720p) - Stream","size":"674MB","url":"https://stream.cmreel.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C720p%20%28MW%29.mp4"},{"name":"Server 1 (4K) - Stream","size":"3.6GB","url":"https://stream.bioscopeapp.com/file/2025-step-190425/Movie-2025-Step/002/4K/Obsession.2025.2160p.WEB-DL.DDP5.1.H.265.mkv"},{"name":"Server 1 (1080p) - Stream","size":"1.01GB","url":"https://stream.bioscopeapp.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C1080p%20HEVC%20%28MW%29.mkv"},{"name":"Server 1 (720p) - Stream","size":"674MB","url":"https://stream.bioscopeapp.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C720p%20%28MW%29.mp4"},{"name":"Cloud 1 (4K) - Stream","size":"3.6GB","url":"https://cmappsecond8.cmdrive.xyz/Movie-2025-Step/002/4K/Obsession.2025.2160p.WEB-DL.DDP5.1.H.265.mkv"},{"name":"Cloud 1 (1080p) - Stream","size":"1.01GB","url":"https://cmappsecond8.cmdrive.xyz/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C1080p%20HEVC%20%28MW%29.mkv"},{"name":"Cloud 1 (720p) - Stream","size":"674MB","url":"https://cmappsecond8.cmdrive.xyz/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C720p%20%28MW%29.mp4"},{"name":"Tube 1 (4K) - Download","size":"3.6GB","url":"https://stream.cmreel.com/file/2025-step-190425/Movie-2025-Step/002/4K/Obsession.2025.2160p.WEB-DL.DDP5.1.H.265.mkv"},{"name":"Tube 1 (1080p) - Download","size":"1.01GB","url":"https://stream.cmreel.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C1080p%20HEVC%20%28MW%29.mkv"},{"name":"Tube 1 (720p) - Download","size":"674MB","url":"https://stream.cmreel.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C720p%20%28MW%29.mp4"},{"name":"Server 1 (4K) - Download","size":"3.6GB","url":"https://stream.bioscopeapp.com/file/2025-step-190425/Movie-2025-Step/002/4K/Obsession.2025.2160p.WEB-DL.DDP5.1.H.265.mkv"},{"name":"Server 1 (1080p) - Download","size":"1.01GB","url":"https://stream.bioscopeapp.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C1080p%20HEVC%20%28MW%29.mkv"},{"name":"Server 1 (720p) - Download","size":"674MB","url":"https://stream.bioscopeapp.com/file/2025-step-190425/Movie-2025-Step/003/Min%20Wai/2026%20Movie/June%202026/Obsession%20%282026%29%20WEB-DL%2C720p%20%28MW%29.mp4"}],"remaining":7,"overview":"$10"}
+c:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"}],["$","meta","2",{"name":"theme-color","content":"#8b5cf6"}]]
+8:null
+11:I[622,[],"IconMark"]
+a:{"metadata":[["$","title","0",{"children":"CineMM - Search Movies & Series with Myanmar Subtitles"}],["$","meta","1",{"name":"description","content":"Search and discover movies, TV series with Myanmar (Burmese) subtitles. Find content from multiple streaming sources in one place. Access Hollywood movies, international films, and documentaries with Myanmar translations."}],["$","link","2",{"rel":"manifest","href":"/manifest.json","crossOrigin":"$undefined"}],["$","meta","3",{"name":"keywords","content":"Myanmar subtitles, Burmese subtitles, Myanmar movies, search movies, Myanmar subtitle movies, Hollywood movies Myanmar, TV series Myanmar subtitles, မြန်မာစာတန်းထိုး, movie search engine"}],["$","meta","4",{"name":"robots","content":"index, follow"}],["$","meta","5",{"name":"mobile-web-app-capable","content":"yes"}],["$","meta","6",{"name":"apple-mobile-web-app-title","content":"CineMM"}],["$","meta","7",{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","meta","8",{"property":"og:title","content":"CineMM - Search Movies & Series with Myanmar Subtitles"}],["$","meta","9",{"property":"og:description","content":"Search engine for movies and TV series with Myanmar subtitles. Find content from multiple sources."}],["$","meta","10",{"property":"og:site_name","content":"CineMM"}],["$","meta","11",{"property":"og:locale","content":"en_US"}],["$","meta","12",{"property":"og:type","content":"website"}],["$","meta","13",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","14",{"name":"twitter:title","content":"CineMM - Myanmar Subtitle Movies & Series"}],["$","meta","15",{"name":"twitter:description","content":"Search and discover movies and series with Myanmar subtitles from various sources."}],["$","link","16",{"rel":"icon","href":"/icons/icon.svg"}],["$","link","17",{"rel":"apple-touch-icon","href":"/icons/icon.svg"}],["$","$L11","18",{}]],"error":null,"digest":"$undefined"}
+f:"$a:metadata"
+12:I[5053,["414","static/chunks/414-4212fe2fed562ca4.js","974","static/chunks/app/page-5a454f9b8fc1dab1.js"],"default"]
+6:["$","$L12",null,{"initialUser":{"uuid":"38598b68-9f6a-4fe9-9cfa-7682e4eb4527","pin":"548495","usageCount":3,"lastReset":"2026-07-07T08:21:18.620Z","isPremium":false,"bonusCredits":0,"remaining":7},"initialRemaining":7,"referralReward":3}]

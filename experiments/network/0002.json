@@ -1,0 +1,18 @@
+{
+  "url": "https://cinemm.com/icons/icon.svg",
+  "method": "GET",
+  "status": 200,
+  "headers": {
+    "cache-control": "public, max-age=0, must-revalidate",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "content-encoding": "zstd",
+    "cf-cache-status": "HIT",
+    "etag": "W/\"18e2f8eb9d2e4f1b4f408712386cf549\"",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=x9CiWmHqcnvKTtad8UGHgiqBhcphbIpyQRmAH5zj0VrMhe7WmaZ3r1%2FDfop53vQRA9mwq6eJVEDlMT9JiG1Ep4uJDNxkoHf5AX9Yt7fSVE88XDZh%2FxAMWB1ZZW2j\"}]}",
+    "cf-ray": "a1751e941a7e3c34-BOM",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "date": "Tue, 07 Jul 2026 07:26:10 GMT",
+    "content-type": "image/svg+xml",
+    "server": "cloudflare"
+  }
+}

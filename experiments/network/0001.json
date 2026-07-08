@@ -1,0 +1,22 @@
+{
+  "url": "https://cinemm.com/",
+  "method": "GET",
+  "status": 200,
+  "headers": {
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+    "cf-ray": "a1751e92894c3c34-BOM",
+    "content-encoding": "zstd",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Tue, 07 Jul 2026 07:26:10 GMT",
+    "link": "</_next/static/media/e4af272ccee01ff0-s.p.woff2>; rel=preload; as=\"font\"; crossorigin=\"\"; type=\"font/woff2\", </_next/static/css/10fab229a2437e00.css>; rel=preload; as=\"style\"",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=muS1jHSlB%2BgeB4mtSdcrciuOF99tEtwKyGVtLcLJODxUTzWHbQpK7gNpoTwkQNOMeJIKWJhiVgo9eF%2FDIONRXQ3Ocyvhv7GUf5jUkOUcRKMd4Q4KqsSNR5JWNjOx\"}]}",
+    "server": "cloudflare",
+    "server-timing": "cfEdge;dur=24,cfOrigin;dur=0,cfWorker;dur=157",
+    "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "x-client-ip": "203.192.225.233",
+    "x-opennext": "1",
+    "x-powered-by": "Next.js"
+  }
+}

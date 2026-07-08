@@ -1,0 +1,31 @@
+{
+  "url": "https://cinemm.com/cdn-cgi/rum?",
+  "method": "POST",
+  "requestHeaders": {
+    "sec-ch-ua-platform": "\"macOS\"",
+    "referer": "https://cinemm.com/",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
+    "content-type": "application/json",
+    "sec-ch-ua-mobile": "?0"
+  },
+  "postData": "{\"memory\":{\"totalJSHeapSize\":4444073,\"usedJSHeapSize\":3160553,\"jsHeapSizeLimit\":4395630592},\"resources\":[],\"referrer\":\"\",\"eventType\":1,\"firstPaint\":0,\"firstContentfulPaint\":0,\"startTime\":1783409689016,\"versions\":{\"fl\":\"2024.11.0\",\"js\":\"2026.6.0\",\"timings\":2},\"pageloadId\":\"f7d20060-8576-47c2-9e9b-e9fcf9e98c1e\",\"location\":\"https://cinemm.com/\",\"nt\":\"navigate\",\"timingsV2\":{\"nextHopProtocol\":\"h3\",\"domainLookupStart\":7,\"domainLookupEnd\":24.59999990463257,\"connectStart\":24.59999990463257,\"connectEnd\":63.199999928474426,\"requestStart\":63.699999928474426,\"responseStart\":300,\"responseEnd\":301.1999999284744,\"domInteractive\":352.09999990463257,\"domComplete\":502.1999999284744,\"loadEventStart\":502.1999999284744,\"loadEventEnd\":502.2999999523163,\"finalResponseHeadersStart\":300,\"firstInterimResponseStart\":0,\"transferSize\":6314,\"decodedBodySize\":18826},\"dt\":\"\",\"siteToken\":\"da093de1a1024009a7d6c7fb035b6c41\",\"st\":2}",
+  "responseStatus": 204,
+  "responseHeaders": {
+    "access-control-max-age": "86400",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=uF35OXtqklF4qLwoIDiqv5FE3fQAvsE6boTJiPCwr6EJa5AZjIlLPa6tsYorGr3rzd67mcWg9PL9EXg0zobcHywKB5hRbM9DeDGb6NEGRfUi%2BPK%2B2Vq%2B4NRZIyW4\"}]}",
+    "access-control-allow-credentials": "true",
+    "access-control-allow-methods": "POST,OPTIONS",
+    "cf-ray": "a1752b3ff8bff57c-BOM",
+    "access-control-allow-origin": "https://cinemm.com",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "server-timing": "cfExtPri",
+    "date": "Tue, 07 Jul 2026 07:34:49 GMT",
+    "content-type": "text/plain",
+    "vary": "Origin",
+    "server": "cloudflare",
+    "priority": "u=1,i"
+  },
+  "responseBody": ""
+}

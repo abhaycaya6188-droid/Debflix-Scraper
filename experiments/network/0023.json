@@ -1,0 +1,24 @@
+{
+  "url": "https://stream.bioscopeapp.com/file/bioscope-all-asset-uploads/cm-app/movies/zrdhT7Mkk23M59cdV0aaiHLYQWs.jpg",
+  "method": "GET",
+  "status": 200,
+  "headers": {
+    "cf-cache-status": "HIT",
+    "x-bz-info-src_last_modified_millis": "1719326830000",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=lPdTQNr1LnLp9wZryuFEQsQx6AFSpy%2BxxzO0NlmsPLrAWjC7BZ4ED3ErfKTypR5QkluJKkmhlOHgJz4RNRkoTpbqOvqCv3e00pssVM9SNSO5BqkZpc7pwZxpZ6DE9oD37Y18QATsnX0%3D\"}]}",
+    "date": "Tue, 07 Jul 2026 07:26:23 GMT",
+    "content-type": "image/jpeg",
+    "last-modified": "Tue, 07 Jul 2026 07:26:23 GMT",
+    "strict-transport-security": "max-age=63072000",
+    "x-bz-file-id": "4_z8c6cdd319ae8f04d9b850515_f110b9c477fd230e3_d20250906_m070124_c005_v0501009_t0010_u01757142084251",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "cache-control": "max-age=14400",
+    "x-bz-upload-timestamp": "1757142084251",
+    "x-bz-content-sha1": "9dd7b58bffb599e6265543a8bff173096101d2b0",
+    "x-bz-file-name": "cm-app/movies/zrdhT7Mkk23M59cdV0aaiHLYQWs.jpg",
+    "cf-ray": "a1751ee51d2db7e5-BOM",
+    "accept-ranges": "bytes",
+    "content-length": "11051",
+    "server": "cloudflare"
+  }
+}
