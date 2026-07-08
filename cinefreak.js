@@ -66,11 +66,16 @@ const releases = [];
 
 $(".ep-card").each((i, card) => {
 
-    const episode =
-        $(card)
-            .find(".episode-badge")
-            .text()
-            .trim();
+    const episodeText =
+    $(card)
+        .find(".episode-badge")
+        .text()
+        .trim();
+
+const episode =
+    Number(
+        episodeText.match(/\d+/)?.[0] || 0
+    );
 
     $(card)
         .find(".watch-links a")
