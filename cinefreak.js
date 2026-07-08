@@ -172,8 +172,11 @@ async function inspectFile(url) {
 }
 
 async function resolve(slug) {
+    console.log(">>>>>>>> ENTERED RESOLVE <<<<<<<<");
 
     const pageResult = await page(slug);
+    console.log(">>>>>>>> PAGE FINISHED <<<<<<<<");
+console.dir(pageResult, { depth: null });
 
     if (!pageResult.links.length) {
         return {
