@@ -61,7 +61,41 @@ console.log("HAS Just a moment:", html.includes("Just a moment"));
 console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
     const $ = cheerio.load(html);
-    console.log("MOVIE TITLES:", $("h4.movie-title").length);
+    console.log("BODY START:");
+console.log($("body").html()?.substring(0, 2000));
+    console.log("ROOT HTML TAG:", $.root().children().first()[0]?.tagName);
+
+console.log("BODY EXISTS:", $("body").length);
+
+console.log("FIRST 5 TAGS:");
+
+$("*").slice(0, 5).each((i, el) => {
+    console.log(i, el.tagName, $(el).attr("class"));
+});
+    console.log("ELEMENTS WITH movie-title CLASS:");
+
+$('[class*="movie-title"]').each((i, el) => {
+
+    console.log({
+        tag: el.tagName,
+        class: $(el).attr("class"),
+        text: $(el).text().trim().substring(0, 80)
+    });
+
+});
+console.log("ELEMENTS WITH dlbtn:");
+
+$('[class*="dlbtn"]').each((i, el) => {
+
+    console.log({
+        tag: el.tagName,
+        class: $(el).attr("class"),
+        text: $(el).text().trim()
+    });
+
+});
+
+
 console.log("DL CONTAINERS:", $(".dlbtn-container").length);
 console.log("ALL H4:", $("h4").length);
 console.log("ALL A:", $("a").length);
