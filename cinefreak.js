@@ -47,6 +47,14 @@ fs.writeFileSync(
 console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
     const $ = cheerio.load(html);
+    console.log("MOVIE TITLES:", $("h4.movie-title").length);
+console.log("DL CONTAINERS:", $(".dlbtn-container").length);
+console.log("ALL H4:", $("h4").length);
+console.log("ALL A:", $("a").length);
+
+$("h4").each((i, el) => {
+    console.log("H4:", $(el).text().trim());
+});
 
 const releases = [];
 
