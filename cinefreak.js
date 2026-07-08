@@ -107,17 +107,19 @@ const episode =
 
             releases.push({
 
-                episode,
+    id: decoded.split("/").pop(),
 
-                title: $(a).text().trim(),
+    episode,
 
-                quality: $(a).text().match(/2160p|1080p|720p|480p/i)?.[0] || "",
+    title: $(a).text().trim(),
 
-                codec: $(a).text().match(/HEVC|HDR|AV1|H\.?264/i)?.[0] || "",
+    quality: $(a).text().match(/2160p|1080p|720p|480p/i)?.[0] || "",
 
-                watch: decoded
+    codec: $(a).text().match(/HEVC|HDR|AV1|H\.?264/i)?.[0] || "",
 
-            });
+    watch: decoded
+
+});
 
         });
 
@@ -251,17 +253,19 @@ return {
 
     qualities: releases.map(r => ({
 
-        episode: r.episode,
+    id: r.id,
 
-        quality: r.quality,
+    episode: r.episode,
 
-        codec: r.codec,
+    quality: r.quality,
 
-        title: r.title,
+    codec: r.codec,
 
-        watch: r.watch
+    title: r.title,
 
-    }))
+    watch: r.watch
+
+}))
 
 };
 
@@ -287,6 +291,8 @@ async function resolveQualities(slug) {
 
         qualities: releases.map(release => ({
 
+    id: release.id,
+
     episode: release.episode,
 
     quality: release.quality,
@@ -298,7 +304,6 @@ async function resolveQualities(slug) {
     watch: release.watch
 
 }))
-
     };
 
 }
