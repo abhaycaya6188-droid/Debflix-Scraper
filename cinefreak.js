@@ -71,6 +71,8 @@ $("h4.movie-title").each((i, titleEl) => {
         href.startsWith("http")
             ? href
             : BASE + href;
+console.log("DOWNLOAD URL:", full);
+
 
     const id =
         new URL(full)
@@ -205,11 +207,23 @@ async function resolve(slug) {
 
     const best = releases[0];
 
-    console.log("[CINEFREAK] Default:", best.title);
+console.log("[CINEFREAK] Default:", best.title);
 
-    const id = best.decoded.split("/").pop();
+console.log("========== BEST RELEASE ==========");
+console.log(best);
 
-    let result;
+console.log("========== DECODED ==========");
+console.log(best.decoded);
+
+const id = best.decoded.split("/").pop();
+
+console.log("========== ID ==========");
+console.log(id);
+
+console.log("========== CINECLOUD URL ==========");
+console.log(`https://new5.cinecloud.site/w/${id}`);
+
+let result;
 
 try {
 
@@ -217,7 +231,11 @@ try {
         `https://new5.cinecloud.site/w/${id}`
     );
 
+    console.log("========== GENERATE RESULT ==========");
+    console.dir(result, { depth: null });
+
 } catch (e) {
+
 
     console.error("CINECLOUD GENERATE FAILED");
     console.error(e);

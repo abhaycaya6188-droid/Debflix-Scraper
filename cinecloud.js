@@ -34,6 +34,7 @@ return {
 
 const iframeUrl =
     iframe[1].replace(/&amp;/g, "&");
+    console.log("IFRAME URL:", iframeUrl);
 
 const r2 =
     decodeURIComponent(
@@ -121,9 +122,13 @@ try {
 
 console.log("POST STATUS:", postRes.status);
 
+console.log("POST HEADERS:");
+console.log(Object.fromEntries(postRes.headers.entries()));
+
 const postBody = await postRes.text();
 
-console.log(postBody.substring(0, 500));
+console.log("POST BODY:");
+console.log(postBody);
 
 } catch (e) {
     console.error("❌ FAILED: POST /w/");
