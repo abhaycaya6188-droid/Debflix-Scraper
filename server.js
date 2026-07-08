@@ -11,6 +11,7 @@ const vidking = require("./vidking");
 const { getVideasySources } = require("./videasy");
 const cinefreak = require("./cinefreak");
 const cinecloud = require("./cinecloud");
+const browser = require("./cinecloud-browser");
 const cinemm = require("./cinemm");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
@@ -560,13 +561,13 @@ if (pathname === "/api/cinefreak/generate") {
     }
 
     const result =
-      await cinecloud.generate(
-        `https://new5.cinecloud.site/w/${id}`
-      );
-
-    return res.end(
-      JSON.stringify(result)
+    await browser.resolve(
+        `https://new5.cinecloud.site/x/${id}`
     );
+
+return res.end(
+    JSON.stringify(result)
+);
 
   } catch (e) {
 
