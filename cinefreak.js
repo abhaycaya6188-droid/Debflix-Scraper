@@ -223,34 +223,42 @@ console.log(best.watch);
 const result = await browser.resolve(best.watch);
 
 console.dir(result, { depth: null });
-    return {
 
-        success: true,
+if (!result.success) {
+    return result;
+}
 
-        default: {
+return {
 
-            stream: result.stream,
+    success: true,
 
-            quality: best.quality,
+    default: {
 
-            codec: best.codec,
+        stream: result.stream,
 
-            size: best.size
+        subtitles: result.subtitles,
 
-        },
+        quality: best.quality,
 
-       qualities: releases.map(r => ({
+        codec: best.codec
 
-    episode: r.episode,
-    quality: r.quality,
-    codec: r.codec,
-    title: r.title,
-    watch: r.watch
+    },
 
+    qualities: releases.map(r => ({
 
-        }))
+        episode: r.episode,
 
-    };
+        quality: r.quality,
+
+        codec: r.codec,
+
+        title: r.title,
+
+        watch: r.watch
+
+    }))
+
+};
 
 }
 
@@ -274,17 +282,17 @@ async function resolveQualities(slug) {
 
         qualities: releases.map(release => ({
 
-            id: release.decoded.split("/").pop(),
+    episode: release.episode,
 
-            quality: release.quality,
+    quality: release.quality,
 
-            codec: release.codec,
+    codec: release.codec,
 
-            size: release.size,
+    title: release.title,
 
-            title: release.title
+    watch: release.watch
 
-        }))
+}))
 
     };
 

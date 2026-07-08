@@ -71,9 +71,15 @@ console.log(
         await browser.close();
 
         return {
-            success: true,
-            iframe
-        };
+    success: true,
+    stream: decodeURIComponent(
+        parsed.searchParams.get("id")
+    ),
+    subtitles: decodeURIComponent(
+        parsed.searchParams.get("sub[0]")
+    ),
+    iframe
+};
 
     } catch (e) {
 
