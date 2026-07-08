@@ -215,45 +215,14 @@ console.log("[CINEFREAK] Default:", best.title);
 console.log("========== BEST RELEASE ==========");
 console.log(best);
 
-console.log("========== DECODED ==========");
-console.log(best.decoded);
+const browser = require("./cinecloud-browser");
 
-const id = best.decoded.split("/").pop();
+console.log("========== WATCH URL ==========");
+console.log(best.watch);
 
-console.log("========== ID ==========");
-console.log(id);
+const result = await browser.resolve(best.watch);
 
-console.log("========== CINECLOUD URL ==========");
-console.log(`https://new5.cinecloud.site/w/${id}`);
-
-let result;
-
-try {
-
-    result = await cinecloud.generate(
-        `https://new5.cinecloud.site/w/${id}`
-    );
-
-    console.log("========== GENERATE RESULT ==========");
-    console.dir(result, { depth: null });
-
-} catch (e) {
-
-
-    console.error("CINECLOUD GENERATE FAILED");
-    console.error(e);
-
-    return {
-        success: false,
-        error: e.message
-    };
-
-}
-
-    if (!result.success) {
-        return result;
-    }
-
+console.dir(result, { depth: null });
     return {
 
         success: true,
@@ -270,17 +239,14 @@ try {
 
         },
 
-        qualities: releases.map(r => ({
+       qualities: releases.map(r => ({
 
-            id: r.decoded.split("/").pop(),
+    episode: r.episode,
+    quality: r.quality,
+    codec: r.codec,
+    title: r.title,
+    watch: r.watch
 
-            quality: r.quality,
-
-            codec: r.codec,
-
-            size: r.size,
-
-            title: r.title
 
         }))
 
