@@ -14,8 +14,7 @@ const cinecloud = require("./cinecloud");
 const cinemm = require("./cinemm");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
-
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 
 
@@ -1737,10 +1736,7 @@ if (pathname === "/api/test-netmirror-cookie") {
 return vidlinkHandler(req, res);
 
 })
-.listen(process.env.PORT || 3000, () => {
-
-    console.log(
-        `Server running on port ${process.env.PORT || 3000}`
-    );
+app.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
 
 });
