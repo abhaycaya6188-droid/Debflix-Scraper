@@ -425,19 +425,16 @@ if (pathname === "/api/cinemm") {
 
   } catch (e) {
 
-    console.error("CINEMM:", e);
-
-    res.statusCode = 500;
+    console.error(e);
 
     return res.end(JSON.stringify({
+        success: false,
+        message: e.message,
+        stack: e.stack,
+        cause: e.cause
+    }, null, 2));
 
-      success: false,
-
-      error: e.message
-
-    }));
-
-  }
+}
 
 }
 
