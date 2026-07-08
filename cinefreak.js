@@ -35,7 +35,6 @@ async function page(slug) {
         headers: HEADERS,
     });
 
-    const html = await res.text();
     const fs = require("fs");
 const path = require("path");
 
@@ -43,6 +42,20 @@ fs.writeFileSync(
     path.join(__dirname, "movie-page.html"),
     html
 );
+
+console.log("HTML LENGTH:", html.length);
+
+console.log("FIRST 1500 CHARS:");
+console.log(html.substring(0, 1500));
+
+console.log("HAS movie-title:", html.includes("movie-title"));
+console.log("HAS episode-grid:", html.includes("episode-grid"));
+console.log("HAS ep-card:", html.includes("ep-card"));
+console.log("HAS dlbtn-container:", html.includes("dlbtn-container"));
+console.log("HAS Download Links:", html.includes("Download Links"));
+console.log("HAS Watch Online:", html.includes("Watch Online"));
+console.log("HAS Cloudflare:", html.includes("Cloudflare"));
+console.log("HAS Just a moment:", html.includes("Just a moment"));
 
 console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
