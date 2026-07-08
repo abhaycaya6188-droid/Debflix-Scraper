@@ -32,10 +32,12 @@ async function page(slug) {
     console.log("[CINEFREAK] PAGE:", url);
 
     const res = await fetch(url, {
-        headers: HEADERS,
-    });
+    headers: HEADERS,
+});
 
-    const fs = require("fs");
+const html = await res.text();   // <-- THIS IS MISSING
+
+const fs = require("fs");
 const path = require("path");
 
 fs.writeFileSync(
@@ -56,7 +58,6 @@ console.log("HAS Download Links:", html.includes("Download Links"));
 console.log("HAS Watch Online:", html.includes("Watch Online"));
 console.log("HAS Cloudflare:", html.includes("Cloudflare"));
 console.log("HAS Just a moment:", html.includes("Just a moment"));
-
 console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
     const $ = cheerio.load(html);
