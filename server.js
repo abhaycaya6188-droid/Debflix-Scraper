@@ -1314,7 +1314,7 @@ const stream =
   `${playlistMatch[1]}${separator}token=${tokenMatch[1]}&expires=${expiresMatch[1]}&h=1`;
 
     const proxied =
-  `https://oracle.debflicks.com/api/hls-proxy?url=${encodeURIComponent(stream)}`;
+  `https://debflix-scraper-production.up.railway.app/api/hls-proxy?url=${encodeURIComponent(stream)}`;
 
 return res.end(
   JSON.stringify({
