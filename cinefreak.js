@@ -1,4 +1,3 @@
-
 const cinecloud = require("./cinecloud");
 const cheerio = require("cheerio");
 
@@ -36,98 +35,182 @@ async function page(slug) {
     });
 
     const html = await res.text();
-    const fs = require("fs");
-const path = require("path");
-
-fs.writeFileSync(
-    path.join(__dirname, "movie-page.html"),
-    html
-);
-
-console.log("Saved:", path.join(__dirname, "movie-page.html"));
 
     const $ = cheerio.load(html);
 
-const releases = [];
+    const releases = [];
 
-$("h4.movie-title").each((i, titleEl) => {
+    // ------------------------------------------------
+    // MOVIE LAYOUT
+    // ------------------------------------------------
 
-    const container =
-        $(titleEl).next(".dlbtn-container");
+    $("h4.movie-title").each((i, titleEl) => {
 
-    if (!container.length)
-        return;
+        const container =
+            $(titleEl).next(".dlbtn-container");
 
-    const download =
-        container.find("a:contains('Download Links')");
+        if (!container.length)
+            return;
 
-    if (!download.length)
-        return;
+        const download =
+            container.find("a:contains('Download Links')");
 
-    const href =
-        download.attr("href");
+        if (!download.length)
+            return;
 
-    const full =
-        href.startsWith("http")
-            ? href
-            : BASE + href;
+        const href =
+            download.attr("href");
 
-    const id =
-        new URL(full)
-            .searchParams
-            .get("id");
+        const full =
+            href.startsWith("http")
+                ? href
+                : BASE + href;
 
-    const decoded =
-        Buffer
-            .from(id, "base64")
-            .toString("utf8")
-            .replace(/newgo32$/i, "");
+        const id =
+            new URL(full)
+                .searchParams
+                .get("id");
 
-    const title =
-        $(titleEl)
-            .text()
-            .replace(/\s+/g, " ")
-            .trim();
+        if (!id)
+            return;
 
-    const quality =
-        title.match(/2160p|1080p|720p|480p/i)?.[0] || "";
+        const decoded =
+            Buffer
+                .from(id, "base64")
+                .toString("utf8")
+                .replace(/newgo32$/i, "");
 
-    const codec =
-        title.match(/HEVC|HDR|HD|SD/i)?.[0] || "";
+        const title =
+            $(titleEl)
+                .text()
+                .replace(/\s+/g, " ")
+                .trim();
 
-    const brackets =
-    [...title.matchAll(/\[(.*?)\]/g)]
-        .map(x => x[1]);
+        const quality =
+            title.match(/2160p|1080p|720p|480p/i)?.[0] || "";
 
-const size =
-    brackets.at(-1) || "";
-    releases.push({
+        const codec =
+            title.match(/HEVC|HDR|HD|SD/i)?.[0] || "";
 
-        title,
+        const brackets =
+            [...title.matchAll(/\[(.*?)\]/g)]
+                .map(x => x[1]);
 
-        quality,
+        const size =
+            brackets.at(-1) || "";
 
-        codec,
+        releases.push({
 
-        size,
+            title,
 
-        generate: full,
+            quality,
 
-        decoded
+            codec,
+
+            size,
+
+            generate: full,
+
+            decoded
+
+        });
 
     });
 
-});
+    // ------------------------------------------------
+    // TV LAYOUT
+    // ------------------------------------------------
 
-return {
+    if (!releases.length) {
 
-    count: releases.length,
+        $(".episode-grid .ep-card").each((i, card) => {
 
-    links: releases
+            const epTitle =
+                $(card)
+                    .find(".ep-title")
+                    .text()
+                    .replace(/\s+/g, " ")
+                    .trim();
 
-};
+            const meta =
+                $(card)
+                    .find(".ep-meta")
+                    .text()
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+            $(card)
+                .find(".quality-grid a")
+                .each((_, link) => {
+
+                    const href =
+                        $(link).attr("href");
+
+                    if (!href)
+                        return;
+
+                    const full =
+                        href.startsWith("http")
+                            ? href
+                            : BASE + href;
+
+                    const id =
+                        new URL(full)
+                            .searchParams
+                            .get("id");
+
+                    if (!id)
+                        return;
+
+                    const decoded =
+                        Buffer
+                            .from(id, "base64")
+                            .toString("utf8")
+                            .replace(/newgo32$/i, "");
+
+                    const label =
+                        $(link)
+                            .text()
+                            .replace(/\s+/g, " ")
+                            .trim();
+
+                    const quality =
+                        label.match(/2160p|1080p|720p|480p/i)?.[0] || "";
+
+                    const codec =
+                        label.match(/HEVC|HDR|SDR|H264|HD|SD/i)?.[0] || "";
+
+                    releases.push({
+
+                        title: `${epTitle} ${meta} ${label}`,
+
+                        quality,
+
+                        codec,
+
+                        size: "",
+
+                        generate: full,
+
+                        decoded
+
+                    });
+
+                });
+
+        });
+
+    }
+
+    return {
+
+        count: releases.length,
+
+        links: releases
+
+    };
+
 }
-
 
 async function generate(generateUrl) {
 
@@ -167,6 +250,7 @@ async function inspectFile(url) {
         headers: Object.fromEntries(res.headers.entries()),
         body
     };
+
 }
 
 async function resolve(slug) {
@@ -180,7 +264,6 @@ async function resolve(slug) {
         };
     }
 
-    // Best quality first
     const releases = [...pageResult.links].sort((a, b) => {
 
         const score = r => {
@@ -211,23 +294,23 @@ async function resolve(slug) {
 
     let result;
 
-try {
+    try {
 
-    result = await cinecloud.generate(
-        `https://new5.cinecloud.site/w/${id}`
-    );
+        result = await cinecloud.generate(
+            `https://new5.cinecloud.site/w/${id}`
+        );
 
-} catch (e) {
+    } catch (e) {
 
-    console.error("CINECLOUD GENERATE FAILED");
-    console.error(e);
+        console.error("CINECLOUD GENERATE FAILED");
+        console.error(e);
 
-    return {
-        success: false,
-        error: e.message
-    };
+        return {
+            success: false,
+            error: e.message
+        };
 
-}
+    }
 
     if (!result.success) {
         return result;
@@ -278,7 +361,6 @@ async function resolveQualities(slug) {
         };
     }
 
-    // Skip the default release (already used for playback)
     const releases = pageResult.links.slice(1);
 
     return {

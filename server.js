@@ -138,6 +138,128 @@ if (req.method === "OPTIONS") {
 const pathname = parsed.pathname;
 const query = parsed.query;
 
+function normalizeTitle(str = "") {
+    return str
+        .toLowerCase()
+        .replace(/[^\w\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function pickBestCinefreakResult(results, movie, options = {}) {
+
+    if (!results.length) return null;
+
+    const type = options.type || "movie";
+    const season = Number(options.season || 0);
+
+    const tmdbTitle = normalizeTitle(
+        type === "tv"
+            ? movie.name
+            : movie.title
+    );
+
+    const originalTitle = normalizeTitle(
+        type === "tv"
+            ? movie.original_name || ""
+            : movie.original_title || ""
+    );
+
+    const year = Number(
+        (
+            type === "tv"
+                ? movie.first_air_date
+                : movie.release_date
+        )?.substring(0, 4)
+    );
+
+    const scored = results.map(r => {
+
+        const text = normalizeTitle(r.t);
+
+        let score = 0;
+
+        // Exact title
+        if (text.includes(tmdbTitle))
+            score += 120;
+
+        // Original title
+        if (
+            originalTitle &&
+            originalTitle !== tmdbTitle &&
+            text.includes(originalTitle)
+        )
+            score += 80;
+
+        // Release year
+        const foundYear =
+            Number(
+                r.t.match(/\b(19|20)\d{2}\b/)?.[0]
+            );
+
+        if (foundYear && foundYear === year)
+            score += 70;
+
+        // TV season
+        if (type === "tv" && season > 0) {
+
+            const foundSeason =
+                Number(
+                    r.t.match(/season\s*(\d+)/i)?.[1]
+                );
+
+            if (foundSeason === season)
+                score += 150;
+            else if (foundSeason)
+                score -= 120;
+        }
+
+        // Prefer proper releases
+        if (/web series/i.test(r.t))
+            score += 20;
+
+        // Penalize extras
+        if (/making/i.test(r.t))
+            score -= 300;
+
+        if (/challenge/i.test(r.t))
+            score -= 300;
+
+        if (/conversation/i.test(r.t))
+            score -= 300;
+
+        if (/documentary/i.test(r.t))
+            score -= 300;
+
+        return {
+            ...r,
+            score
+        };
+
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    console.log("\n========== CINEFREAK MATCH ==========");
+
+    scored.forEach(r => {
+        console.log(
+            `${r.score} | ${r.t}`
+        );
+    });
+
+    console.log(
+        "SELECTED:",
+        scored[0].t
+    );
+
+    console.log("=====================================\n");
+
+    return scored[0];
+}
+
+
+
     if (pathname === "/api/progress" && req.method === "POST") {
 
     let body = "";
@@ -457,13 +579,18 @@ if (pathname === "/api/cinefreak-search") {
     }
 
     const result =
-      await cinefreak.resolve(
-        results[0].l
-      );
+    await cinefreak.resolve(results[0].l);
 
-    return res.end(
-      JSON.stringify(result, null, 2)
-    );
+return res.end(
+    JSON.stringify(result, null, 2)
+);
+
+if (!best) {
+    return res.end(JSON.stringify({
+        success: false,
+        error: "No suitable match"
+    }));
+}
 
   } catch (e) {
 
@@ -523,8 +650,27 @@ if (pathname === "/api/cinefreak") {
       }));
     }
 
-    const result =
-      await cinefreak.resolve(results[0].l);
+    const best = pickBestCinefreakResult(
+    results,
+    movie,
+    {
+        type,
+        season: query.season,
+        episode: query.episode
+    }
+);
+
+if (!best) {
+
+    return res.end(JSON.stringify({
+        success: false,
+        error: "No suitable CineFreak match"
+    }));
+
+}
+
+const result =
+    await cinefreak.resolve(best.l);
 
     return res.end(
       JSON.stringify(result)
@@ -636,10 +782,28 @@ if (pathname === "/api/cinefreak/qualities") {
     // Resolve Remaining Qualities
     // -----------------------
 
-    const result =
-      await cinefreak.resolveQualities(
-        results[0].l
-      );
+
+const best = pickBestCinefreakResult(
+    results,
+    movie,
+    {
+        type,
+        season: query.season,
+        episode: query.episode
+    }
+);
+
+if (!best) {
+
+    return res.end(JSON.stringify({
+        success: false,
+        error: "No suitable CineFreak match"
+    }));
+
+}
+
+const result =
+    await cinefreak.resolveQualities(best.l);
 
     return res.end(
       JSON.stringify(result)
@@ -1077,6 +1241,8 @@ if (pathname === "/api/vidking") {
     }
 
     const apiRes = await fetch(apiUrl, {
+
+
       headers: {
         Referer: "https://vixsrc.to/",
         "User-Agent": "Mozilla/5.0"
@@ -1084,6 +1250,11 @@ if (pathname === "/api/vidking") {
     });
 
     const body = await apiRes.text();
+
+console.log("REQUESTED:", apiUrl);
+console.log("FINAL URL:", apiRes.url);
+console.log("STATUS:", apiRes.status);
+console.log("BODY:", body.substring(0, 500));
 
 console.log("VIXSRC STATUS:", apiRes.status);
 console.log("VIXSRC BODY:", body.substring(0, 500));
