@@ -1,3 +1,4 @@
+
 const TMDB_API_KEY = "7bf6b8cf4d8a661e8a90ae825995471d";
 console.log("RAILWAY FORCE REBUILD");
 const http = require("http");
@@ -12,6 +13,7 @@ const { getVideasySources } = require("./videasy");
 const cinefreak = require("./cinefreak");
 const cinecloud = require("./cinecloud");
 const cinemm = require("./cinemm");
+const ctg = require("./provider/ctg/engine");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
 
@@ -557,6 +559,115 @@ if (pathname === "/api/cinemm") {
     }, null, 2));
 
 }
+
+}
+
+if (pathname === "/api/ctg") {
+
+  try {
+
+    const id = query.id;
+    const type = query.type || "movie";
+
+    if (!id) {
+
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Missing TMDB id"
+      }));
+
+    }
+
+    // -----------------------
+    // TMDB Lookup
+    // -----------------------
+
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
+    );
+
+    const media = await tmdbRes.json();
+
+    const title =
+      type === "tv"
+        ? media.name
+        : media.title;
+
+    const year = Number(
+      (
+        type === "tv"
+          ? media.first_air_date
+          : media.release_date
+      )?.split("-")[0]
+    );
+
+    // -----------------------
+    // CTG Search
+    // -----------------------
+
+    const results = ctg.search({
+
+      title,
+
+      year
+
+    });
+
+    if (!results.length) {
+
+      return res.end(JSON.stringify({
+
+        success: false,
+
+        error: "No CTG match"
+
+      }));
+
+    }
+
+    const streams = results.map(r => ({
+
+      provider: "CTG",
+
+      quality: r.quality || "Auto",
+
+      url: r.url,
+
+      size: r.size,
+
+      codec: r.codec,
+
+      source: r.source
+
+    }));
+
+    return res.end(JSON.stringify({
+
+      success: true,
+
+      provider: "CTG",
+
+      streams
+
+    }));
+
+  }
+
+  catch (e) {
+
+    console.error(e);
+
+    res.statusCode = 500;
+
+    return res.end(JSON.stringify({
+
+      success: false,
+
+      error: e.message
+
+    }));
+
+  }
 
 }
 
