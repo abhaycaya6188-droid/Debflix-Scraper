@@ -25,11 +25,22 @@ const STATS_FILE =
 
 const FOLDERS_FILE =
     path.join(CACHE_DIR, "folders.json");
-    const QUEUE_FILE =
+
+const QUEUE_FILE =
     path.join(CACHE_DIR, "queue.json");
 
 const STATE_FILE =
     path.join(CACHE_DIR, "state.json");
+
+// ADD HERE
+const INDEX_TMP_FILE =
+    path.join(CACHE_DIR, "index.tmp.json");
+
+const FOLDERS_TMP_FILE =
+    path.join(CACHE_DIR, "folders.tmp.json");
+
+const STATS_TMP_FILE =
+    path.join(CACHE_DIR, "stats.tmp.json");
 
 if (!fs.existsSync(CACHE_DIR)) {
 
@@ -42,6 +53,7 @@ if (!fs.existsSync(CACHE_DIR)) {
 let index = [];
 
 let folders = {};
+let seen = new Set();
 
 let stats = {
 
@@ -91,6 +103,35 @@ function saveStats() {
         JSON.stringify(stats, null, 2)
 
     );
+
+}
+
+function cleanupCache() {
+
+    const files = [
+
+        INDEX_FILE,
+        FOLDERS_FILE,
+        STATS_FILE,
+
+        INDEX_TMP_FILE,
+        FOLDERS_TMP_FILE,
+        STATS_TMP_FILE,
+
+        QUEUE_FILE,
+        STATE_FILE
+
+    ];
+
+    for (const file of files) {
+
+        if (fs.existsSync(file)) {
+
+            fs.unlinkSync(file);
+
+        }
+
+    }
 
 }
 
@@ -202,6 +243,12 @@ async function visit(entry) {
 
     if (!parser.validate(meta))
         return;
+const key = entry.url;
+
+if (seen.has(key))
+    return;
+
+seen.add(key);
 
     index.push({
 
@@ -267,9 +314,12 @@ async function visit(entry) {
 
 async function build() {
 
+    cleanupCache();
+
     index = [];
 
     folders = {};
+    seen.clear();
 
     stats = {
 

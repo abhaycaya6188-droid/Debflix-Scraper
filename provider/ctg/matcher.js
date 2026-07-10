@@ -77,17 +77,62 @@ function score(entry, query) {
 
 }
 
-function search(index, query) {
+function search(engine, query) {
 
     const results = [];
 
-    for (const entry of index) {
+    const wanted = normalize(query.title);
+
+let candidates = null;
+
+/* TV lookup */
+if (
+    query.type === "tv" &&
+    query.season != null &&
+    query.episode != null &&
+    engine.tvMap
+) {
+
+    const key =
+        `${wanted}|${Number(query.season)}|${Number(query.episode)}`;
+        console.log("[SEARCH]", key);
+
+    if (engine.tvMap.has(key)) {
+
+        candidates =
+            engine.tvMap.get(key);
+
+    }
+
+}
+
+/* Movie lookup */
+if (
+    !candidates &&
+    engine.movieMap &&
+    engine.movieMap.has(wanted)
+) {
+
+    candidates =
+        engine.movieMap.get(wanted);
+
+}
+
+/* Fallback */
+if (!candidates) {
+
+    candidates =
+        engine.index;
+
+}
+
+    for (const entry of candidates) {
 
         const s =
             score(entry, query);
 
         if (s < 1000)
-    continue;
+            continue;
 
         results.push({
 
@@ -99,13 +144,9 @@ function search(index, query) {
 
     }
 
-    results.sort((a, b) => {
+    results.sort((a, b) => b.score - a.score);
 
-        return b.score - a.score;
-
-    });
-
-    return results;
+return results.slice(0, 25);
 
 }
 

@@ -607,11 +607,17 @@ if (pathname === "/api/ctg") {
 
     const results = ctg.search({
 
-      title,
+    title,
 
-      year
+    year,
 
-    });
+    season: Number(query.season || 1),
+
+    episode: Number(query.episode || 1),
+
+    type
+
+});
 
     if (!results.length) {
 
@@ -627,17 +633,21 @@ if (pathname === "/api/ctg") {
 
     const streams = results.map(r => ({
 
-      provider: "CTG",
+       provider: "CTG",
 
-      quality: r.quality || "Auto",
+    quality: r.quality || "Auto",
 
-      url: r.url,
+    url: r.url,
 
-      size: r.size,
+    codec: r.codec,
 
-      codec: r.codec,
+    language: r.language,
 
-      source: r.source
+    size: r.size,
+
+    source: r.source,
+
+    filename: r.filename
 
     }));
 

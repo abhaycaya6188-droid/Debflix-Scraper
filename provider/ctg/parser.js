@@ -170,29 +170,21 @@ function detectYear(name) {
 
 function detectSeasonEpisode(name) {
 
-    const se = name.match(/S(\d{1,2})E(\d{1,2})/i);
+    
+    console.log(name);
+
+    const se = name.match(
+        /S\s*(\d{1,2})\s*E\s*(\d{1,2})/i
+    );
+
+   
 
     if (se) {
 
         return {
 
             season: Number(se[1]),
-
             episode: Number(se[2])
-
-        };
-
-    }
-
-    const sx = name.match(/(\d{1,2})x(\d{1,2})/i);
-
-    if (sx) {
-
-        return {
-
-            season: Number(sx[1]),
-
-            episode: Number(sx[2])
 
         };
 
@@ -201,13 +193,11 @@ function detectSeasonEpisode(name) {
     return {
 
         season: null,
-
         episode: null
 
     };
 
 }
-
 function detectSource(name) {
 
     if (/remux/i.test(name))
@@ -255,9 +245,9 @@ function cleanTitle(filename) {
     title = title.replace(/\b(19\d{2}|20\d{2})\b.*$/i, "");
 
     title = title.replace(
-        /\b(S\d{1,2}E\d{1,2}|\d{1,2}x\d{1,2})\b.*$/i,
-        ""
-    );
+    /\b(S\s*\d{1,2}\s*E\s*\d{1,2}|\d{1,2}x\d{1,2})\b.*$/i,
+    ""
+);
 
     title = title.replace(
         /\b(2160p|1080p|720p|480p|4k)\b.*$/i,
@@ -279,12 +269,17 @@ function parse(filename, fullPath = "") {
     decodeURIComponent(fullPath || "") +
     " " +
     filename;
+if (filename.includes("Breaking Bad")) {
+
+
+}
+
 
     const normalized =
         normalize(searchText);
 
-    const seasonEpisode =
-        detectSeasonEpisode(filename);
+        const seasonEpisode =
+    detectSeasonEpisode(searchText);
 
     const meta = {
 
