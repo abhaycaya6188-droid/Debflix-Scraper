@@ -589,33 +589,45 @@ if (pathname === "/api/ctg") {
     // TMDB Lookup
     // -----------------------
 
-    const tmdbRes = await fetch(
-      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
-    );
+    let title =
+  String(query.title || "").trim();
 
-    const media = await tmdbRes.json();
+let year =
+  Number(query.year || 0);
 
-    const title =
+if (!title) {
+
+  const tmdbRes = await fetch(
+    `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
+  );
+
+  const media =
+    await tmdbRes.json();
+
+  title =
+    type === "tv"
+      ? media.name
+      : media.title;
+
+  year = Number(
+    (
       type === "tv"
-        ? media.name
-        : media.title;
+        ? media.first_air_date
+        : media.release_date
+    )?.split("-")[0]
+  );
 
-    const year = Number(
-      (
-        type === "tv"
-          ? media.first_air_date
-          : media.release_date
-      )?.split("-")[0]
-    );
+}
+
 console.log("=== CTG REQUEST ===");
 console.log("=== CTG SEARCH ===");
 
 console.log({
-    title,
-    year,
-    type,
-    season: Number(query.season || 1),
-    episode: Number(query.episode || 1)
+  title,
+  year,
+  type,
+  season: Number(query.season || 1),
+  episode: Number(query.episode || 1)
 });
     // -----------------------
     // CTG Search
