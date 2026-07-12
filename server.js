@@ -14,6 +14,10 @@ const cinefreak = require("./cinefreak");
 const cinecloud = require("./cinecloud");
 const cinemm = require("./cinemm");
 const ctg = require("./provider/ctg/engine");
+const ctg2 = require("./provider/ctg/engine2");
+const ctg3 = require("./provider/ctg/engine3");
+const ctg4 = require("./provider/ctg/engine4");
+const ctg5 = require("./provider/ctg/engine5");
 const NET_VERIFY = "https://net11.cc";
 const NET_MAIN = "https://net11.cc";
 
@@ -562,9 +566,12 @@ if (pathname === "/api/cinemm") {
 
 }
 
+
 if (pathname === "/api/ctg") {
 
   try {
+
+    
 
     const id = query.id;
     const type = query.type || "movie";
@@ -600,24 +607,62 @@ if (pathname === "/api/ctg") {
           : media.release_date
       )?.split("-")[0]
     );
+console.log("=== CTG REQUEST ===");
+console.log("=== CTG SEARCH ===");
 
+console.log({
+    title,
+    year,
+    type,
+    season: Number(query.season || 1),
+    episode: Number(query.episode || 1)
+});
     // -----------------------
     // CTG Search
     // -----------------------
 
-    const results = ctg.search({
+    const searchQuery = {
 
-    title,
+  title,
 
-    year,
+  year,
 
-    season: Number(query.season || 1),
+  season: Number(query.season || 1),
 
-    episode: Number(query.episode || 1),
+  episode: Number(query.episode || 1),
 
-    type
+  type
 
-});
+};
+
+const r1 = ctg.search(searchQuery);
+const r2 = ctg2.search(searchQuery);
+const r3 = ctg3.search(searchQuery);
+const r4 = ctg4.search(searchQuery);
+const r5 = ctg5.search(searchQuery);
+
+console.log("========== CTG ENGINES ==========");
+console.log("Server 1 :", r1.length);
+console.log("Server 2 :", r2.length);
+console.log("Server 3 :", r3.length);
+console.log("Server 4 :", r4.length);
+console.log("Server 5 :", r5.length);
+
+
+const results = [
+    ...r1,
+    ...r2,
+    ...r3,
+    ...r4,
+    ...r5
+];
+results.sort((a, b) => b.score - a.score);
+
+    console.log("CTG Results:", results.length);
+
+if (results.length) {
+    console.log(results[0]);
+}
 
     if (!results.length) {
 
@@ -633,21 +678,21 @@ if (pathname === "/api/ctg") {
 
     const streams = results.map(r => ({
 
-       provider: "CTG",
+      provider: "CTG",
 
-    quality: r.quality || "Auto",
+      quality: r.quality || "Auto",
 
-    url: r.url,
+      url: r.url,
 
-    codec: r.codec,
+      codec: r.codec,
 
-    language: r.language,
+      language: r.language,
 
-    size: r.size,
+      size: r.size,
 
-    source: r.source,
+      source: r.source,
 
-    filename: r.filename
+      filename: r.filename
 
     }));
 
@@ -655,7 +700,7 @@ if (pathname === "/api/ctg") {
 
       success: true,
 
-      provider: "CTG",
+     provider: "CTG",
 
       streams
 

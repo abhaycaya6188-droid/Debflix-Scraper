@@ -32,6 +32,20 @@ function normalize(text) {
 
 }
 
+function safeDecode(value = "") {
+
+    try {
+
+        return decodeURIComponent(value);
+
+    } catch {
+
+        return value;
+
+    }
+
+}
+
 function extension(filename) {
 
     const match =
@@ -171,7 +185,7 @@ function detectYear(name) {
 function detectSeasonEpisode(name) {
 
     
-    console.log(name);
+    
 
     const se = name.match(
         /S\s*(\d{1,2})\s*E\s*(\d{1,2})/i
@@ -262,17 +276,45 @@ function cleanTitle(filename) {
 return title;
 }
 
-function parse(filename, fullPath = "") {
+function titleFromPath(fullPath = "") {
 
-    const searchText =
+    const decodedPath = safeDecode(fullPath || "");
 
-    decodeURIComponent(fullPath || "") +
-    " " +
-    filename;
-if (filename.includes("Breaking Bad")) {
+const parts = decodedPath
+    .split("/")
+    .filter(Boolean);
 
+    const tvIndex = parts.findIndex(
+        p => p.toLowerCase() === "tv_series"
+    );
+
+    if (tvIndex === -1)
+        return "";
+
+    if (parts.length <= tvIndex + 1)
+        return "";
+
+    let title = parts[tvIndex + 1];
+
+    title = title
+        .replace(/season\s*\d+/i, "")
+        .replace(/s\d+$/i, "")
+        .trim();
+
+    return title;
 
 }
+
+function parse(filename, fullPath = "") {
+
+    const decodedPath = safeDecode(fullPath);
+
+const searchText =
+    decodedPath +
+    " " +
+    filename;
+
+
 
 
     const normalized =
@@ -289,11 +331,14 @@ if (filename.includes("Breaking Bad")) {
 
         isVideo: isVideo(filename),
 
-        title: cleanTitle(filename),
+        title: cleanTitle(filename) || titleFromPath(fullPath),
 
-        normalizedTitle: normalize(cleanTitle(filename)),
+        normalizedTitle: normalize(
+    cleanTitle(filename) || titleFromPath(fullPath)
+),
 
         year: detectYear(searchText),
+
 
         season: seasonEpisode.season,
 

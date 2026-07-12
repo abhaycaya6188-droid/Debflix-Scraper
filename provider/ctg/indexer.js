@@ -61,7 +61,17 @@ let stats = {
 
     folders: 0,
 
-    videos: 0
+    videos: 0,
+
+    files: 0,
+
+    videoFiles: 0,
+
+    ignored: 0,
+
+    rejected: 0,
+
+    duplicates: 0
 
 };
 
@@ -213,6 +223,8 @@ function loadState() {
 
 async function visit(entry) {
 
+    stats.files++;
+
     if (entry.type === "directory") {
 
         folders[entry.url] = {
@@ -226,10 +238,18 @@ async function visit(entry) {
         stats.folders++;
 
         return;
+
     }
 
-    if (entry.type !== "video")
-        return;
+    if (entry.type !== "video") {
+
+    stats.ignored++;
+
+    return;
+
+}
+
+stats.videoFiles++;
 
     const meta = parser.parse(
 
@@ -241,12 +261,22 @@ async function visit(entry) {
 
 
 
-    if (!parser.validate(meta))
-        return;
+    if (!parser.validate(meta)) {
+
+    stats.rejected++;
+
+    return;
+
+}
 const key = entry.url;
 
-if (seen.has(key))
+if (seen.has(key)) {
+
+    stats.duplicates++;
+
     return;
+
+}
 
 seen.add(key);
 
@@ -304,11 +334,19 @@ seen.add(key);
 
     if (stats.videos % 5000 === 0) {
 
-        saveIndex();
-        saveFolders();
-        saveStats();
+    fs.writeFileSync(
+        INDEX_TMP_FILE,
+        JSON.stringify(index)
+    );
 
-    }
+    fs.writeFileSync(
+        FOLDERS_TMP_FILE,
+        JSON.stringify(folders)
+    );
+
+    saveStats();
+
+}
 
 }
 
@@ -316,20 +354,29 @@ async function build() {
 
     cleanupCache();
 
-    index = [];
-
-    folders = {};
-    seen.clear();
+index = [];
+folders = {};
+seen.clear();
 
     stats = {
 
-        started: Date.now(),
+    started: Date.now(),
 
-        folders: 0,
+    folders: 0,
 
-        videos: 0
+    videos: 0,
 
-    };
+    files: 0,
+
+    videoFiles: 0,
+
+    ignored: 0,
+
+    rejected: 0,
+
+    duplicates: 0
+
+};
 
     for (const root of ROOTS) {
 
@@ -353,6 +400,22 @@ async function build() {
     saveFolders();
 
     saveStats();
+
+    [
+    INDEX_TMP_FILE,
+    FOLDERS_TMP_FILE,
+    STATS_TMP_FILE,
+    QUEUE_FILE,
+    STATE_FILE
+].forEach(file => {
+
+    if (fs.existsSync(file)) {
+
+        fs.unlinkSync(file);
+
+    }
+
+});
 
     console.log("");
 

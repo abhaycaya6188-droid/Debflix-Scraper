@@ -81,9 +81,23 @@ function search(engine, query) {
 
     const results = [];
 
+    // Allow both:
+    // engine.search("Primitive War")
+    // engine.search({ title: "Primitive War", ... })
+
+    if (typeof query === "string") {
+
+        query = {
+
+            title: query
+
+        };
+
+    }
+
     const wanted = normalize(query.title);
 
-let candidates = null;
+    let candidates = null;
 
 /* TV lookup */
 if (
