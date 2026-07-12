@@ -13,6 +13,16 @@ async function resolve(url) {
     });
 
     const html = await res.text();
+    console.log("[CINECLOUD GET]", {
+    status: getRes.status,
+    url: getRes.url,
+    contentType: getRes.headers.get("content-type"),
+    length: html.length,
+    title:
+        html.match(
+            /<title[^>]*>([^<]*)<\/title>/i
+        )?.[1] || "NO TITLE"
+});
 
 
 const iframe =
@@ -88,9 +98,12 @@ try {
         .join("; ");
 
     const csrf =
-        html.match(
-            /meta\s+name="X-CSRF-TOKEN"\s+content="([^"]+)"/i
-        )?.[1];
+    html.match(
+        /<meta[^>]+name=["']X-CSRF-TOKEN["'][^>]+content=["']([^"']+)["']/i
+    )?.[1] ||
+    html.match(
+        /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']X-CSRF-TOKEN["']/i
+    )?.[1];
 
     if (!csrf) {
         return {
