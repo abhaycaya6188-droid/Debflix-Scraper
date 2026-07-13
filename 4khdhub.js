@@ -109,6 +109,12 @@ function isUsefulLink(url) {
 
 function scoreResult(item, title, year) {
   const target = normalizeTitle(title);
+
+resolved = resolved.filter(link => {
+    const rel = normalizeTitle(link.release || "");
+
+    return rel.includes(target);
+});
   const found = normalizeTitle(item.title);
   let score = 0;
 
