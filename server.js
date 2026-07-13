@@ -18,8 +18,8 @@ const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
 const ctg4 = require("./provider/ctg/engine4");
 const ctg5 = require("./provider/ctg/engine5");
-const NET_VERIFY = "https://net11.cc";
-const NET_MAIN = "https://net11.cc";
+const NET_VERIFY = "https://net77.cc";
+const NET_MAIN = "https://net77.cc";
 
 const port = process.env.PORT || 3000;
 
@@ -1038,6 +1038,415 @@ const result =
 
 }
 
+if (pathname === "/api/movix-hls-proxy") {
+
+  try {
+
+    const rawUrl = query.url;
+
+    if (!rawUrl) {
+
+      res.statusCode = 400;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Missing url"
+        })
+      );
+
+    }
+
+    let targetUrl;
+
+    try {
+
+      targetUrl =
+        decodeURIComponent(
+          String(rawUrl)
+        );
+
+    } catch {
+
+      targetUrl =
+        String(rawUrl);
+
+    }
+
+    let target;
+
+    try {
+
+      target =
+        new URL(targetUrl);
+
+    } catch {
+
+      res.statusCode = 400;
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Invalid Movix URL"
+        })
+      );
+
+    }
+
+    /*
+     * Only allow known Movix media hosts.
+     * This prevents the route becoming an open proxy.
+     */
+    const allowedHosts = [
+      "finepulfe.xyz",
+      "vmeas.cloud",
+    ];
+
+    const allowed =
+      allowedHosts.some(
+        host =>
+          target.hostname === host ||
+          target.hostname.endsWith(
+            `.${host}`
+          )
+      );
+
+    if (!allowed) {
+
+      res.statusCode = 403;
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            `Movix host not allowed: ${target.hostname}`
+        })
+      );
+
+    }
+
+    const requestHeaders = {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/149.0.0.0 Safari/537.36",
+
+      Accept: "*/*",
+
+      Referer:
+        "https://cinestream.info/",
+
+      Origin:
+        "https://cinestream.info",
+    };
+
+    /*
+     * Forward Range header for TS/video segments.
+     */
+    if (req.headers.range) {
+      requestHeaders.Range =
+        req.headers.range;
+    }
+
+    console.log(
+      "MOVIX HLS PROXY:",
+      targetUrl
+    );
+
+    const upstream =
+      await fetch(
+        targetUrl,
+        {
+          headers: requestHeaders,
+          redirect: "follow",
+        }
+      );
+
+    const contentType =
+      upstream.headers.get(
+        "content-type"
+      ) || "";
+
+    const isPlaylist =
+      contentType.includes(
+        "application/vnd.apple.mpegurl"
+      ) ||
+      contentType.includes(
+        "application/x-mpegurl"
+      ) ||
+      target.pathname
+        .toLowerCase()
+        .endsWith(".m3u8");
+
+    if (!upstream.ok) {
+
+      const failureBody =
+        await upstream.text();
+
+      res.statusCode =
+        upstream.status;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            `Movix upstream HTTP ${upstream.status}`,
+          preview:
+            failureBody.slice(0, 300)
+        })
+      );
+
+    }
+
+    /*
+     * Railway public URL.
+     * Keep this Movix-only.
+     */
+    const proxyBase =
+      "https://debflix-scraper-production.up.railway.app";
+
+    const buildProxyUrl =
+      mediaUrl =>
+        `${proxyBase}/api/movix-hls-proxy?url=${encodeURIComponent(
+          mediaUrl
+        )}`;
+
+    if (isPlaylist) {
+
+      const playlist =
+        await upstream.text();
+
+      if (
+        !playlist
+          .trimStart()
+          .startsWith("#EXTM3U")
+      ) {
+
+        res.statusCode = 502;
+
+        res.setHeader(
+          "Content-Type",
+          "application/json"
+        );
+
+        return res.end(
+          JSON.stringify({
+            success: false,
+            error:
+              "Movix upstream did not return an HLS playlist",
+            preview:
+              playlist.slice(0, 300)
+          })
+        );
+
+      }
+
+      const playlistBase =
+        new URL(
+          ".",
+          targetUrl
+        ).href;
+
+      const rewrittenLines =
+        playlist
+          .split(/\r?\n/)
+          .map(line => {
+
+            const trimmed =
+              line.trim();
+
+            if (!trimmed) {
+              return line;
+            }
+
+            /*
+             * Rewrite URI="..."
+             * Used by audio, subtitles and encryption keys.
+             */
+            if (
+              trimmed.startsWith("#") &&
+              line.includes('URI="')
+            ) {
+
+              return line.replace(
+                /URI="([^"]+)"/g,
+                (_, uriValue) => {
+
+                  const fullUrl =
+                    new URL(
+                      uriValue,
+                      targetUrl
+                    ).href;
+
+                  return (
+                    `URI="` +
+                    buildProxyUrl(
+                      fullUrl
+                    ) +
+                    `"`
+                  );
+
+                }
+              );
+
+            }
+
+            /*
+             * Leave normal HLS tags unchanged.
+             */
+            if (
+              trimmed.startsWith("#")
+            ) {
+              return line;
+            }
+
+            /*
+             * Rewrite media playlist,
+             * video segment, subtitle or key URL.
+             */
+            const fullUrl =
+              new URL(
+                trimmed,
+                playlistBase
+              ).href;
+
+            return buildProxyUrl(
+              fullUrl
+            );
+
+          })
+          .join("\n");
+
+      res.statusCode = 200;
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.apple.mpegurl"
+      );
+
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        "*"
+      );
+
+      res.setHeader(
+        "Cache-Control",
+        "no-store"
+      );
+
+      return res.end(
+        rewrittenLines
+      );
+
+    }
+
+    /*
+     * Binary files:
+     * TS, VTT, keys, MP4 fragments, etc.
+     */
+    const buffer =
+      Buffer.from(
+        await upstream.arrayBuffer()
+      );
+
+    res.statusCode =
+      upstream.status;
+
+    res.setHeader(
+      "Content-Type",
+      contentType ||
+      "application/octet-stream"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      "*"
+    );
+
+    const contentLength =
+      upstream.headers.get(
+        "content-length"
+      );
+
+    const contentRange =
+      upstream.headers.get(
+        "content-range"
+      );
+
+    const acceptRanges =
+      upstream.headers.get(
+        "accept-ranges"
+      );
+
+    if (contentLength) {
+
+      res.setHeader(
+        "Content-Length",
+        contentLength
+      );
+
+    }
+
+    if (contentRange) {
+
+      res.setHeader(
+        "Content-Range",
+        contentRange
+      );
+
+    }
+
+    if (acceptRanges) {
+
+      res.setHeader(
+        "Accept-Ranges",
+        acceptRanges
+      );
+
+    }
+
+    return res.end(
+      buffer
+    );
+
+  } catch (e) {
+
+    console.error(
+      "MOVIX HLS PROXY ERROR:",
+      e
+    );
+
+    res.statusCode = 500;
+
+    res.setHeader(
+      "Content-Type",
+      "application/json"
+    );
+
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error:
+          e.message ||
+          "Unknown Movix proxy error"
+      })
+    );
+
+  }
+
+}
+
+
 if (pathname === "/api/hls-proxy") {
 
   try {
@@ -1673,7 +2082,7 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/test-home") {
 
-    const r = await fetch("https://net11.cc/home", {
+   const r = await fetch(`${NET_MAIN}/home`, {
         headers: {
             "User-Agent":
               "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36"
