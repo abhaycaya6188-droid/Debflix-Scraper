@@ -13,6 +13,7 @@ const { getVideasySources } = require("./videasy");
 const cinefreak = require("./cinefreak");
 const cinecloud = require("./cinecloud");
 const cinemm = require("./cinemm");
+const fourKhdhub = require("./4khdhub");
 const ctg = require("./provider/ctg/engine");
 const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
@@ -565,6 +566,85 @@ if (pathname === "/api/cinemm") {
 }
 
 }
+
+if (pathname === "/api/4khdhub") {
+
+  try {
+    res.setHeader(
+  "Content-Type",
+  "application/json"
+);
+
+    const id = query.id;
+    const type = query.type || "movie";
+
+    if (!id) {
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Missing TMDB id",
+        streams: []
+      }));
+    }
+
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
+    );
+
+    const media = await tmdbRes.json();
+
+    const title =
+      type === "tv"
+        ? media.name
+        : media.title;
+
+    const year = (
+      type === "tv"
+        ? media.first_air_date
+        : media.release_date
+    )?.split("-")[0];
+
+    if (!title) {
+      return res.end(JSON.stringify({
+        success: false,
+        error: "Title not found",
+        streams: []
+      }));
+    }
+
+    const streams =
+      await fourKhdhub.getStreams({
+        title,
+        year,
+        type,
+        season: query.season,
+        episode: query.episode
+      });
+
+    return res.end(JSON.stringify({
+      success: true,
+      provider: "4KHDHub",
+      title,
+      year,
+      streams
+    }));
+
+  } catch (e) {
+
+    console.error("4KHDHUB:", e);
+
+    return res.end(JSON.stringify({
+      success: false,
+      provider: "4KHDHub",
+      error: e.message,
+      stack: e.stack,
+      streams: []
+    }, null, 2));
+
+  }
+
+}
+
+
 
 
 if (pathname === "/api/ctg") {
@@ -1742,8 +1822,7 @@ if (pathname === "/api/vidking") {
           provider: "VidKing",
           quality: source.quality || "Auto",
 
-          url:
-            `https://oracle.debflicks.com/api/hls-proxy?url=${encodeURIComponent(source.url)}`,
+          url: source.url,
 
           type: "hls"
 
