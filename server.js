@@ -17,15 +17,9 @@ const ctg = require("./provider/ctg/engine");
 const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
 const ctg4 = require("./provider/ctg/engine4");
-const NET_MAIN =
-  process.env.NETMIRROR_DOMAIN ||
-  "https://net52.cc";
-const NET_VERIFY =
-  process.env.NETMIRROR_VERIFY_DOMAIN ||
-  "https://net22.cc";
-const NET_HOME_PATH =
-  process.env.NETMIRROR_HOME_PATH ||
-  "/home";
+const ctg5 = require("./provider/ctg/engine5");
+const NET_VERIFY = "https://net77.cc";
+const NET_MAIN = "https://net77.cc";
 
 const port = process.env.PORT || 3000;
 
@@ -34,32 +28,6 @@ const port = process.env.PORT || 3000;
 const crypto = require("crypto");
 let netmirrorCookie = "";
 let netmirrorCookieTime = 0;
-
-function buildCookieHeader(setCookie = "") {
-  return setCookie
-    .split(/,(?=\s*[^;,]+=)/)
-    .map(cookie => cookie.split(";")[0].trim())
-    .filter(Boolean)
-    .join("; ");
-}
-
-function parseJsonStep(text, step, response) {
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    const preview =
-      String(text || "")
-        .replace(/\s+/g, " ")
-        .slice(0, 500);
-
-    throw new Error(
-      `${step} returned non-JSON` +
-      ` status=${response?.status || "unknown"}` +
-      ` content-type=${response?.headers?.get?.("content-type") || "unknown"}` +
-      ` preview=${preview}`
-    );
-  }
-}
 
 // -----------------------------------------------------
 // NewTV helpers (matches Kotlin provider)
@@ -130,16 +98,9 @@ function buildNewTvHeaders(player) {
 
 async function getNetmirrorCookie() {
 
-  if (
-    netmirrorCookie &&
-    Date.now() - netmirrorCookieTime < 1000 * 60 * 20
-  ) {
-    return netmirrorCookie;
-  }
+  console.log("INITIALIZING NET11 SESSION");
 
-  console.log("INITIALIZING NETMIRROR SESSION");
-
-  const res = await fetch(`${NET_MAIN}${NET_HOME_PATH}`, {
+  const res = await fetch(`${NET_MAIN}/home`, {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
@@ -149,26 +110,23 @@ async function getNetmirrorCookie() {
     }
   });
 
-  if (!res.ok) {
-    throw new Error(
-      `NetMirror home failed: ${res.status}`
-    );
+  const headers = Object.fromEntries(res.headers.entries());
+
+return headers;
+
+  const match =
+    setCookie.match(/t_hash_t=([^;]+)/);
+
+  if (!match) {
+    throw new Error("t_hash_t cookie not found");
   }
 
-  const setCookie =
-    res.headers.get("set-cookie") || "";
+  const tHash = match[1];
 
-  const cookieHeader =
-    buildCookieHeader(setCookie);
-
-  if (!cookieHeader) {
-    throw new Error("NetMirror session cookie not found");
-  }
-
-  netmirrorCookie = cookieHeader;
+  netmirrorCookie = tHash;
   netmirrorCookieTime = Date.now();
 
-  return cookieHeader;
+  return tHash;
 }
   
 
@@ -631,33 +589,45 @@ if (pathname === "/api/ctg") {
     // TMDB Lookup
     // -----------------------
 
-    const tmdbRes = await fetch(
-      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
-    );
+    let title =
+  String(query.title || "").trim();
 
-    const media = await tmdbRes.json();
+let year =
+  Number(query.year || 0);
 
-    const title =
+if (!title) {
+
+  const tmdbRes = await fetch(
+    `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
+  );
+
+  const media =
+    await tmdbRes.json();
+
+  title =
+    type === "tv"
+      ? media.name
+      : media.title;
+
+  year = Number(
+    (
       type === "tv"
-        ? media.name
-        : media.title;
+        ? media.first_air_date
+        : media.release_date
+    )?.split("-")[0]
+  );
 
-    const year = Number(
-      (
-        type === "tv"
-          ? media.first_air_date
-          : media.release_date
-      )?.split("-")[0]
-    );
+}
+
 console.log("=== CTG REQUEST ===");
 console.log("=== CTG SEARCH ===");
 
 console.log({
-    title,
-    year,
-    type,
-    season: Number(query.season || 1),
-    episode: Number(query.episode || 1)
+  title,
+  year,
+  type,
+  season: Number(query.season || 1),
+  episode: Number(query.episode || 1)
 });
     // -----------------------
     // CTG Search
@@ -681,23 +651,22 @@ const r1 = ctg.search(searchQuery);
 const r2 = ctg2.search(searchQuery);
 const r3 = ctg3.search(searchQuery);
 const r4 = ctg4.search(searchQuery);
+const r5 = ctg5.search(searchQuery);
 
 console.log("========== CTG ENGINES ==========");
 console.log("Server 1 :", r1.length);
 console.log("Server 2 :", r2.length);
 console.log("Server 3 :", r3.length);
 console.log("Server 4 :", r4.length);
+console.log("Server 5 :", r5.length);
 
-if (r4.length) {
-    console.log("SERVER 4 FIRST RESULT:");
-    console.log(r4[0]);
-}
 
 const results = [
     ...r1,
     ...r2,
     ...r3,
-    ...r4
+    ...r4,
+    ...r5
 ];
 results.sort((a, b) => b.score - a.score);
 
@@ -1069,6 +1038,415 @@ const result =
 
 }
 
+if (pathname === "/api/movix-hls-proxy") {
+
+  try {
+
+    const rawUrl = query.url;
+
+    if (!rawUrl) {
+
+      res.statusCode = 400;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Missing url"
+        })
+      );
+
+    }
+
+    let targetUrl;
+
+    try {
+
+      targetUrl =
+        decodeURIComponent(
+          String(rawUrl)
+        );
+
+    } catch {
+
+      targetUrl =
+        String(rawUrl);
+
+    }
+
+    let target;
+
+    try {
+
+      target =
+        new URL(targetUrl);
+
+    } catch {
+
+      res.statusCode = 400;
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Invalid Movix URL"
+        })
+      );
+
+    }
+
+    /*
+     * Only allow known Movix media hosts.
+     * This prevents the route becoming an open proxy.
+     */
+    const allowedHosts = [
+      "finepulfe.xyz",
+      "vmeas.cloud",
+    ];
+
+    const allowed =
+      allowedHosts.some(
+        host =>
+          target.hostname === host ||
+          target.hostname.endsWith(
+            `.${host}`
+          )
+      );
+
+    if (!allowed) {
+
+      res.statusCode = 403;
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            `Movix host not allowed: ${target.hostname}`
+        })
+      );
+
+    }
+
+    const requestHeaders = {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/149.0.0.0 Safari/537.36",
+
+      Accept: "*/*",
+
+      Referer:
+        "https://cinestream.info/",
+
+      Origin:
+        "https://cinestream.info",
+    };
+
+    /*
+     * Forward Range header for TS/video segments.
+     */
+    if (req.headers.range) {
+      requestHeaders.Range =
+        req.headers.range;
+    }
+
+    console.log(
+      "MOVIX HLS PROXY:",
+      targetUrl
+    );
+
+    const upstream =
+      await fetch(
+        targetUrl,
+        {
+          headers: requestHeaders,
+          redirect: "follow",
+        }
+      );
+
+    const contentType =
+      upstream.headers.get(
+        "content-type"
+      ) || "";
+
+    const isPlaylist =
+      contentType.includes(
+        "application/vnd.apple.mpegurl"
+      ) ||
+      contentType.includes(
+        "application/x-mpegurl"
+      ) ||
+      target.pathname
+        .toLowerCase()
+        .endsWith(".m3u8");
+
+    if (!upstream.ok) {
+
+      const failureBody =
+        await upstream.text();
+
+      res.statusCode =
+        upstream.status;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            `Movix upstream HTTP ${upstream.status}`,
+          preview:
+            failureBody.slice(0, 300)
+        })
+      );
+
+    }
+
+    /*
+     * Railway public URL.
+     * Keep this Movix-only.
+     */
+    const proxyBase =
+      "https://debflix-scraper-production.up.railway.app";
+
+    const buildProxyUrl =
+      mediaUrl =>
+        `${proxyBase}/api/movix-hls-proxy?url=${encodeURIComponent(
+          mediaUrl
+        )}`;
+
+    if (isPlaylist) {
+
+      const playlist =
+        await upstream.text();
+
+      if (
+        !playlist
+          .trimStart()
+          .startsWith("#EXTM3U")
+      ) {
+
+        res.statusCode = 502;
+
+        res.setHeader(
+          "Content-Type",
+          "application/json"
+        );
+
+        return res.end(
+          JSON.stringify({
+            success: false,
+            error:
+              "Movix upstream did not return an HLS playlist",
+            preview:
+              playlist.slice(0, 300)
+          })
+        );
+
+      }
+
+      const playlistBase =
+        new URL(
+          ".",
+          targetUrl
+        ).href;
+
+      const rewrittenLines =
+        playlist
+          .split(/\r?\n/)
+          .map(line => {
+
+            const trimmed =
+              line.trim();
+
+            if (!trimmed) {
+              return line;
+            }
+
+            /*
+             * Rewrite URI="..."
+             * Used by audio, subtitles and encryption keys.
+             */
+            if (
+              trimmed.startsWith("#") &&
+              line.includes('URI="')
+            ) {
+
+              return line.replace(
+                /URI="([^"]+)"/g,
+                (_, uriValue) => {
+
+                  const fullUrl =
+                    new URL(
+                      uriValue,
+                      targetUrl
+                    ).href;
+
+                  return (
+                    `URI="` +
+                    buildProxyUrl(
+                      fullUrl
+                    ) +
+                    `"`
+                  );
+
+                }
+              );
+
+            }
+
+            /*
+             * Leave normal HLS tags unchanged.
+             */
+            if (
+              trimmed.startsWith("#")
+            ) {
+              return line;
+            }
+
+            /*
+             * Rewrite media playlist,
+             * video segment, subtitle or key URL.
+             */
+            const fullUrl =
+              new URL(
+                trimmed,
+                playlistBase
+              ).href;
+
+            return buildProxyUrl(
+              fullUrl
+            );
+
+          })
+          .join("\n");
+
+      res.statusCode = 200;
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.apple.mpegurl"
+      );
+
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        "*"
+      );
+
+      res.setHeader(
+        "Cache-Control",
+        "no-store"
+      );
+
+      return res.end(
+        rewrittenLines
+      );
+
+    }
+
+    /*
+     * Binary files:
+     * TS, VTT, keys, MP4 fragments, etc.
+     */
+    const buffer =
+      Buffer.from(
+        await upstream.arrayBuffer()
+      );
+
+    res.statusCode =
+      upstream.status;
+
+    res.setHeader(
+      "Content-Type",
+      contentType ||
+      "application/octet-stream"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      "*"
+    );
+
+    const contentLength =
+      upstream.headers.get(
+        "content-length"
+      );
+
+    const contentRange =
+      upstream.headers.get(
+        "content-range"
+      );
+
+    const acceptRanges =
+      upstream.headers.get(
+        "accept-ranges"
+      );
+
+    if (contentLength) {
+
+      res.setHeader(
+        "Content-Length",
+        contentLength
+      );
+
+    }
+
+    if (contentRange) {
+
+      res.setHeader(
+        "Content-Range",
+        contentRange
+      );
+
+    }
+
+    if (acceptRanges) {
+
+      res.setHeader(
+        "Accept-Ranges",
+        acceptRanges
+      );
+
+    }
+
+    return res.end(
+      buffer
+    );
+
+  } catch (e) {
+
+    console.error(
+      "MOVIX HLS PROXY ERROR:",
+      e
+    );
+
+    res.statusCode = 500;
+
+    res.setHeader(
+      "Content-Type",
+      "application/json"
+    );
+
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error:
+          e.message ||
+          "Unknown Movix proxy error"
+      })
+    );
+
+  }
+
+}
+
+
 if (pathname === "/api/hls-proxy") {
 
   try {
@@ -1129,22 +1507,9 @@ const playlistBase =
     originalUrl.lastIndexOf("/") + 1
   );
 
-	const rewritten = text
-	  // HLS.js expects subtitle URIs to point to subtitle playlists.
-	  // Some providers put direct .vtt files here, which freezes playback.
-	  .split("\n")
-	  .filter(
-	    line =>
-	      !/^#EXT-X-MEDIA:/i.test(line) ||
-	      !/TYPE=SUBTITLES/i.test(line) ||
-	      !/\.vtt(?:["?]|$)/i.test(line)
-	  )
-	  .map(line =>
-	    line.replace(/,?SUBTITLES="[^"]*"/gi, "")
-	  )
-	  .join("\n")
-	  // rewrite AES key
-	  .replace(
+const rewritten = text
+  // rewrite AES key
+  .replace(
     /URI="([^"]+)"/g,
     (_, key) => {
       const full =
@@ -1604,17 +1969,14 @@ if (pathname === "/api/dahmer") {
     const streams = [];
 
     for (const match of html.matchAll(regex)) {
-      const href = match[1];
-      const file = decodeURIComponent(href);
-      const fileUrl = new URL(href, folderUrl).href;
+      const file = decodeURIComponent(match[1]);
 
       streams.push({
         provider: "Dahmer",
         quality:
           file.match(/(2160p|1080p|720p)/i)?.[0] ||
           "Auto",
-        filename: file,
-        url: fileUrl
+        url: `https://a.111477.xyz${file}`
       });
     }
 
@@ -1681,10 +2043,7 @@ if (pathname === "/api/dahmer") {
       ...html.matchAll(
         /href=['"]([^'"]+\.(?:mkv|mp4|avi|webm))['"]/gi
       ),
-    ].map(m => ({
-      filename: decodeURIComponent(m[1]),
-      url: new URL(m[1], seasonUrl).href,
-    }));
+    ].map(m => decodeURIComponent(m[1]));
 
     let matchedFiles = files;
 
@@ -1693,16 +2052,15 @@ if (pathname === "/api/dahmer") {
         `S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}`;
 
       matchedFiles = files.filter(file =>
-        file.filename.includes(tag)
+        file.includes(tag)
       );
     }
 
     const streams = matchedFiles.map(file => ({
       provider: "Dahmer",
       quality:
-        file.filename.match(/(2160p|1080p|720p)/i)?.[0] || "Auto",
-      filename: file.filename,
-      url: file.url
+        file.match(/(2160p|1080p|720p)/i)?.[0] || "Auto",
+      url: `https://a.111477.xyz${file}`
     }));
 
     return res.end(
@@ -1724,13 +2082,7 @@ if (pathname === "/api/dahmer") {
 
 if (pathname === "/api/test-home") {
 
-  try {
-    const testDomain =
-      query.domain || NET_MAIN;
-    const testPath =
-      query.path || NET_HOME_PATH;
-
-    const r = await fetch(`${testDomain}${testPath}`, {
+   const r = await fetch(`${NET_MAIN}/home`, {
         headers: {
             "User-Agent":
               "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36"
@@ -1739,23 +2091,8 @@ if (pathname === "/api/test-home") {
 
     return res.end(JSON.stringify({
         status: r.status,
-        domain: testDomain,
-        path: testPath,
         headers: Object.fromEntries(r.headers.entries())
     }, null, 2));
-  } catch (e) {
-    return res.end(
-      JSON.stringify({
-        success: false,
-        domain: query.domain || NET_MAIN,
-        path: query.path || NET_HOME_PATH,
-        error: e.message,
-        cause: e.cause?.message,
-        code: e.cause?.code,
-        hostname: e.cause?.hostname
-      }, null, 2)
-    );
-  }
 }
 
 
@@ -1770,11 +2107,11 @@ if (pathname === "/api/netmirror") {
 const season = query.season || "1";
 const episode = query.episode || "1";
 
-let netmirrorSessionCookie;
+let tHash;
 
 try {
-    netmirrorSessionCookie = await getNetmirrorCookie();
-    console.log("COOKIE:", netmirrorSessionCookie);
+    tHash = await getNetmirrorCookie();
+    console.log("COOKIE:", tHash);
 } catch (e) {
   console.error("VERIFY FETCH ERROR:");
   console.error(e);
@@ -1793,7 +2130,7 @@ const searchRes = await fetch(searchUrl, {
 
    "Referer": `${NET_MAIN}/home`,
 
-    "Cookie": `${netmirrorSessionCookie}; hd=on; ott=nf`
+    "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
   }
 });
 
@@ -1803,11 +2140,7 @@ console.log("SEARCH BODY:");
 console.log(body);
 
 
-const search = parseJsonStep(
-  body,
-  "NetMirror search",
-  searchRes
-);
+const search = JSON.parse(body);
 
 console.log("SEARCH JSON:");
 console.log(JSON.stringify(search, null, 2));
@@ -1830,17 +2163,17 @@ if (!first) {
   `${NET_MAIN}/post.php?id=${first.id}&t=${Math.floor(Date.now() / 1000)}`;
 console.log("POST URL:", detailsUrl);
 
-console.log("COOKIE TYPE:", typeof netmirrorSessionCookie);
-console.log("COOKIE VALUE:", netmirrorSessionCookie);
+console.log("COOKIE TYPE:", typeof tHash);
+console.log("COOKIE VALUE:", tHash);
 console.log("POST COOKIE:");
-console.log(`${netmirrorSessionCookie}; hd=on; ott=nf`);
+console.log(`t_hash_t=${tHash}; hd=on; ott=nf`);
 const detailsRes = await fetch(detailsUrl, {
   headers: {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
   "Referer": `${NET_MAIN}/home`,
   "Accept": "application/json, text/plain, */*",
-  "Cookie": `${netmirrorSessionCookie}; hd=on; ott=nf`
+  "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
 }
 });
 
@@ -1851,11 +2184,7 @@ const detailsBody = await detailsRes.text();
 console.log("POST BODY:");
 console.log(detailsBody);
 
-const details = parseJsonStep(
-  detailsBody,
-  "NetMirror post",
-  detailsRes
-);
+const details = JSON.parse(detailsBody);
 console.log("DETAIL TYPE:", details.type);
 console.log("DETAIL TITLE:", details.title);
 console.log("SEARCH TITLE:", first.t);
@@ -1873,59 +2202,16 @@ console.log(details.season);
 
 let selectedEpisode;
 
-if (details.type === "m") {
-
-  selectedEpisode = {
-    id: first.id,
-    t: first.t
-  };
-
-} else {
-
-const seasonObj = details.season?.find(
-  item => Number(item.s) === Number(season)
-);
-
-if (!seasonObj) {
-  throw new Error("Season not found");
-}
-
-const epRes = await fetch(
-  `${NET_MAIN}/mobile/episodes.php?s=${seasonObj.id}&series=${first.id}&page=1`,
-  {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0",
-      "Referer": `${NET_MAIN}/home`,
-      "Cookie": `${netmirrorSessionCookie}; hd=on; ott=nf`
-    }
+return res.end(JSON.stringify({
+  success: true,
+  debug: {
+    search: first,
+    details: details
   }
-);
-
-const epText = await epRes.text();
-console.log("EPISODES BODY:");
-console.log(epText);
-
-const epData = parseJsonStep(
-  epText,
-  "NetMirror episodes",
-  epRes
-);
-
-selectedEpisode =
-  epData.episodes?.find(
-    e =>
-      String(e.ep.replace("E","")) === String(episode)
-  );
-
-if (!selectedEpisode) {
-  throw new Error("Episode not found");
-}
-
-}
+}));
 
 // -------------------------------
-// NETMIRROR PLAYBACK FLOW
+// NEW NET11 FLOW
 // -------------------------------
 
 const playRes = await fetch(
@@ -1940,7 +2226,7 @@ const playRes = await fetch(
       "X-Requested-With": "XMLHttpRequest",
       "Content-Type":
         "application/x-www-form-urlencoded; charset=UTF-8",
-      "Cookie": `${netmirrorSessionCookie}; hd=on; ott=nf`
+      "Cookie": `t_hash_t=${tHash}; hd=on; ott=nf`
     },
     body: new URLSearchParams({
       id: selectedEpisode.id
@@ -1953,11 +2239,7 @@ const playText = await playRes.text();
 console.log("PLAY:");
 console.log(playText);
 
-const play = parseJsonStep(
-  playText,
-  "NetMirror play",
-  playRes
-);
+const play = JSON.parse(playText);
 
 if (!play.h) {
   throw new Error("play.php returned no token");
@@ -2002,11 +2284,7 @@ console.log("PLAYLIST:");
 console.log(playlistText);
 
 const playlist =
-  parseJsonStep(
-    playlistText,
-    "NetMirror playlist",
-    playlistRes
-  );
+  JSON.parse(playlistText);
 
 if (
   !playlist.length ||
@@ -2036,13 +2314,8 @@ return res.end(
     return res.end(
       JSON.stringify({
         success: false,
-        domain: NET_MAIN,
-        error: e.message,
-        cause: e.cause?.message,
-        code: e.cause?.code,
-        hostname: e.cause?.hostname,
-        stack: e.stack?.split("\n").slice(0, 3)
-      }, null, 2)
+        error: e.message
+      })
     );
   }
 }
