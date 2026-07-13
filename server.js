@@ -1257,10 +1257,29 @@ if (pathname === "/api/movix-hls-proxy") {
           targetUrl
         ).href;
 
-      const rewrittenLines =
-        playlist
-          .split(/\r?\n/)
-          .map(line => {
+      const cleanedPlaylist =
+  playlist
+    .split(/\r?\n/)
+    .filter(line => {
+      const trimmed =
+        line.trim();
+
+      return !/^#EXT-X-MEDIA:TYPE=SUBTITLES/i.test(
+        trimmed
+      );
+    })
+    .map(line =>
+      line.replace(
+        /,SUBTITLES="[^"]*"/gi,
+        ""
+      )
+    )
+    .join("\n");
+
+const rewrittenLines =
+  cleanedPlaylist
+    .split(/\r?\n/)
+    .map(line => {
 
             const trimmed =
               line.trim();
