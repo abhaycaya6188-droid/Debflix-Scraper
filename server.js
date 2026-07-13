@@ -1,8 +1,11 @@
 
+
 const TMDB_API_KEY = "7bf6b8cf4d8a661e8a90ae825995471d";
 console.log("RAILWAY FORCE REBUILD");
 const http = require("http");
 const url = require("url");
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
 const { execSync } = require("child_process");
 const { spawn } = require("child_process");
 const db = require("./api/database");
