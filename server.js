@@ -22,6 +22,8 @@ const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
 const ctg4 = require("./provider/ctg/engine4");
 const ctg5 = require("./provider/ctg/engine5");
+const movixV2 =
+  require("./movix-v2");
 const NET_VERIFY = "https://net77.cc";
 const NET_MAIN = "https://net77.cc";
 
@@ -1547,6 +1549,72 @@ const rewrittenLines =
   }
 
 }
+
+if (
+  pathname === "/api/movix-v2"
+) {
+  res.setHeader(
+    "Content-Type",
+    "application/json"
+  );
+
+  try {
+    const tmdbId =
+      query.id;
+
+    const type =
+      query.type || "movie";
+
+    const season =
+      query.season;
+
+    const episode =
+      query.episode;
+
+    if (!tmdbId) {
+      res.statusCode = 400;
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error: "Missing TMDB id",
+          streams: [],
+        })
+      );
+    }
+
+    const result =
+      await movixV2.getStreams({
+        tmdbId,
+        type,
+        season,
+        episode,
+      });
+
+    return res.end(
+      JSON.stringify(result)
+    );
+  } catch (error) {
+    console.error(
+      "MOVIX V2 ERROR:",
+      error
+    );
+
+    res.statusCode = 500;
+
+    return res.end(
+      JSON.stringify({
+        success: false,
+        provider: "Movix",
+        error:
+          error?.message ||
+          String(error),
+        streams: [],
+      })
+    );
+  }
+}
+
 
 
 if (pathname === "/api/hls-proxy") {
