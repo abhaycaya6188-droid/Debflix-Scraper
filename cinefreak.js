@@ -270,10 +270,13 @@ async function resolve(slug) {
 
             let s = 0;
 
-            if (r.quality === "2160p") s += 400;
-            else if (r.quality === "1080p") s += 300;
-            else if (r.quality === "720p") s += 200;
-            else if (r.quality === "480p") s += 100;
+            // CineCloud must generate the file before returning it. Huge 4K
+            // releases frequently time out or overload the origin, so use a
+            // web-friendly default and keep 4K in the manual quality list.
+            if (r.quality === "1080p") s += 500;
+            else if (r.quality === "720p") s += 400;
+            else if (r.quality === "480p") s += 300;
+            else if (r.quality === "2160p") s += 100;
 
             if (r.codec === "HEVC") s += 50;
             if (r.codec === "HDR") s += 40;

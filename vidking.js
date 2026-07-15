@@ -1,6 +1,6 @@
 const fetch = global.fetch;
 
-const API = "https://api.wingsdatabase.com";
+const API = "https://api.speedracelight.com";
 
 // ===== VidKing decrypt constants =====
 
@@ -60,11 +60,12 @@ const PROVIDERS = [
 async function getSeed(tmdbId) {
     const res = await fetch(`${API}/seed?mediaId=${tmdbId}`, {
   headers: {
-    "Origin": "https://www.vidking.net",
-    "Referer": "https://www.vidking.net/",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-    "Accept": "*/*",
-    "Accept-Language": "en-US,en;q=0.9"
+    Origin: "https://www.vidking.net",
+    Referer: "https://www.vidking.net/",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0"
   }
 });
     if (!res.ok) {
@@ -106,11 +107,12 @@ const seed =
 
     const res = await fetch(url, {
     headers: {
-        "Origin": "https://www.vidking.net",
-        "Referer": "https://www.vidking.net/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.9"
+        Origin: "https://www.vidking.net",
+        Referer: "https://www.vidking.net/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0"
     }
 });
 

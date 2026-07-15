@@ -3,6 +3,59 @@ const HEADERS = {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36"
 };
 
+function extractCsrf(html = "") {
+    return html.match(
+        /<input[^>]+name=["']csrf_test_name["'][^>]+value=["']([^"']+)["']/i
+    )?.[1] ||
+    html.match(
+        /<input[^>]+value=["']([^"']+)["'][^>]+name=["']csrf_test_name["']/i
+    )?.[1] ||
+    html.match(
+        /<meta[^>]+name=["'](?:X-CSRF-TOKEN|csrf-token)["'][^>]+content=["']([^"']+)["']/i
+    )?.[1] ||
+    html.match(
+        /<meta[^>]+content=["']([^"']+)["'][^>]+name=["'](?:X-CSRF-TOKEN|csrf-token)["']/i
+    )?.[1] || "";
+}
+
+function cookieHeader(response, existing = "") {
+    const values = typeof response.headers.getSetCookie === "function"
+        ? response.headers.getSetCookie()
+        : [response.headers.get("set-cookie")].filter(Boolean);
+
+    const jar = new Map();
+    existing.split("; ").filter(Boolean).forEach(value => {
+        const [name] = value.split("=", 1);
+        jar.set(name, value);
+    });
+    values.forEach(value => {
+        const pair = value.split(";")[0];
+        const [name] = pair.split("=", 1);
+        if (name) jar.set(name, pair);
+    });
+    return [...jar.values()].join("; ");
+}
+
+function googleVideoUrl(text = "") {
+    const decoded = text
+        .replace(/&amp;/g, "&")
+        .replace(/&#0*38;/g, "&");
+
+    const google = decoded.match(
+        /https:\/\/video-downloads\.googleusercontent\.com[^"'<> ]+/i
+    )?.[0];
+
+    const hrefMedia = decoded.match(
+        /href=["'](https?:\/\/[^"']+\.(?:mkv|mp4|webm|avi)(?:\?[^"']*)?)["']/i
+    )?.[1];
+
+    const directMedia = decoded.match(
+        /https?:\/\/[^"'<> ]+\.(?:mkv|mp4|webm|avi)(?:\?[^"'<> ]*)?/i
+    )?.[0];
+
+    return google || hrefMedia || directMedia || "";
+}
+
 async function resolve(url) {
 
     console.log("[CINECLOUD]", url);
@@ -13,31 +66,13 @@ async function resolve(url) {
     });
 
     const html = await res.text();
-    console.log("[CINECLOUD GET]", {
-    status: getRes.status,
-    url: getRes.url,
-    contentType: getRes.headers.get("content-type"),
-    length: html.length,
-    title:
-        html.match(
-            /<title[^>]*>([^<]*)<\/title>/i
-        )?.[1] || "NO TITLE"
-});
-
-
 const iframe =
     html.match(/<iframe[^>]+src="([^"]+)"/i);
 
 if (!iframe) {
-
-    const fs = require("fs");
-
-fs.writeFileSync("interstellar.html", html);
-
 return {
     success: false,
-    error: "Iframe not found",
-    saved: "interstellar.html"
+    error: "Iframe not found"
 };
 
 }
@@ -91,19 +126,8 @@ try {
 
     const html = await getRes.text();
 
-    const cookies = getRes.headers.getSetCookie();
-
-    const cookieHeader = cookies
-        .map(x => x.split(";")[0])
-        .join("; ");
-
-    const csrf =
-    html.match(
-        /<meta[^>]+name=["']X-CSRF-TOKEN["'][^>]+content=["']([^"']+)["']/i
-    )?.[1] ||
-    html.match(
-        /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']X-CSRF-TOKEN["']/i
-    )?.[1];
+    let cookies = cookieHeader(getRes);
+    const csrf = extractCsrf(html);
 
     if (!csrf) {
         return {
@@ -113,35 +137,57 @@ try {
     }
 
     console.log("[CINECLOUD] Starting generation...");
+    const getUrl = downloadUrl.replace("/w/", "/d/");
+    const origin = new URL(downloadUrl).origin;
 
     // ---------- STEP 2 : START GENERATION ----------
 
-    try {
+    let started = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const postRes = await fetch(downloadUrl, {
+                method: "POST",
+                headers: {
+                    ...HEADERS,
+                    Cookie: cookies,
+                    Referer: getUrl,
+                    Origin: origin,
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": csrf,
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    Accept: "application/json, text/javascript, */*; q=0.01"
+                },
+                body: new URLSearchParams({ csrf_test_name: csrf })
+            });
 
-    const postRes = await fetch(downloadUrl, {
-    method: "POST",
-    headers: {
-        ...HEADERS,
-        Cookie: cookieHeader,
-        Referer: downloadUrl.replace("/w/", "/d/"),
-        Origin: "https://new5.cinecloud.site",
-        "X-Requested-With": "XMLHttpRequest"
-    },
-    body: new URLSearchParams({
-        csrf_test_name: csrf
-    })
-});
+            const postBody = await postRes.text();
+            cookies = cookieHeader(postRes, cookies);
+            console.log("POST STATUS:", postRes.status);
 
-console.log("POST STATUS:", postRes.status);
+            const immediate = googleVideoUrl(postBody);
+            if (immediate) return { success: true, stream: immediate };
 
-const postBody = await postRes.text();
+            if (postRes.ok) {
+                started = true;
+                break;
+            }
 
-console.log(postBody.substring(0, 500));
+            if (postRes.status < 500 || attempt === 3) {
+                return {
+                    success: false,
+                    error: `Generation HTTP ${postRes.status}`
+                };
+            }
+        } catch (e) {
+            if (attempt === 3) throw e;
+        }
 
-} catch (e) {
-    console.error("❌ FAILED: POST /w/");
-    throw e;
-}
+        await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
+    }
+
+    if (!started) {
+        return { success: false, error: "Generation did not start" };
+    }
     // ---------- STEP 3 : POLL ----------
 
     for (let i = 1; i <= 30; i++) {
@@ -154,10 +200,11 @@ console.log(postBody.substring(0, 500));
 
 try {
 
-    res = await fetch(downloadUrl, {
+    res = await fetch(getUrl, {
         headers: {
             ...HEADERS,
-            Cookie: cookieHeader
+            Cookie: cookies,
+            Referer: getUrl
         }
     });
 
@@ -167,50 +214,15 @@ try {
 }
         const page = await res.text();
 
-        if (i === 1 || i === 10 || i === 20 || i === 30) {
+        const stream = googleVideoUrl(page);
 
-    require("fs").writeFileSync(
-        `poll-${i}.html`,
-        page
-    );
-
-   
-
-}
-
-const googleLinks = [
-    ...page.matchAll(/https:\/\/video-downloads\.googleusercontent\.com[^"' ]+/g)
-].map(m => m[0]);
-
-const uniqueLinks = [...new Set(googleLinks)];
-
-console.log("Google links found:", googleLinks.length);
-console.log("Unique Google links:", uniqueLinks.length);
-
-uniqueLinks.forEach((link, i) => {
-    console.log(`Link ${i + 1}: ${link}`);
-});
-
-googleLinks.forEach((link, i) => {
-    console.log(`${i + 1}: ${link.substring(0, 120)}...`);
-});
-
-        const match = page.match(
-    /href="(https:\/\/video-downloads\.googleusercontent\.com[^"]+)"/i
-);
-
-        if (match) {
-
-    require("fs").writeFileSync(
-        "cinecloud-success.html",
-        page
-    );
+        if (stream) {
 
     console.log("[CINECLOUD] SUCCESS");
 
     return {
         success: true,
-        stream: match[1]
+        stream
     };
 
 }
