@@ -102,6 +102,222 @@ function buildNewTvHeaders(player) {
   };
 }
 
+const VIDKING_PROXY_PATH =
+  "/api/vidking-hls-proxy";
+
+const VIDKING_ALLOWED_HOSTS = [
+  "ironbubble.site",
+];
+
+function isAllowedVidKingHost(hostname) {
+  const host = String(hostname || "")
+    .toLowerCase();
+
+  return VIDKING_ALLOWED_HOSTS.some(
+    allowed =>
+      host === allowed ||
+      host.endsWith(`.${allowed}`)
+  );
+}
+
+function normalizeHeaderObject(value) {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const normalized = {};
+
+  for (const [key, rawValue] of Object.entries(value)) {
+    if (
+      rawValue === undefined ||
+      rawValue === null
+    ) {
+      continue;
+    }
+
+    const lower =
+      String(key).toLowerCase();
+
+    let name = key;
+
+    if (lower === "referer") {
+      name = "Referer";
+    } else if (lower === "origin") {
+      name = "Origin";
+    } else if (
+      lower === "user-agent" ||
+      lower === "useragent"
+    ) {
+      name = "User-Agent";
+    } else if (lower === "accept") {
+      name = "Accept";
+    }
+
+    normalized[name] =
+      String(rawValue);
+  }
+
+  return normalized;
+}
+
+function decodeVidKingHeaders(rawHeaders) {
+  if (!rawHeaders) {
+    return {};
+  }
+
+  try {
+    return normalizeHeaderObject(
+      JSON.parse(
+        decodeURIComponent(
+          String(rawHeaders)
+        )
+      )
+    );
+  } catch {
+    return {};
+  }
+}
+
+function getVidKingDefaultHeaders(targetUrl) {
+  let origin = "";
+
+  try {
+    origin =
+      new URL(targetUrl).origin;
+  } catch {
+    origin = "";
+  }
+
+  return {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+      "AppleWebKit/537.36 (KHTML, like Gecko) " +
+      "Chrome/149.0.0.0 Safari/537.36",
+
+    Accept: "*/*",
+
+    Referer:
+      "https://www.vidking.net/",
+
+    Origin:
+      "https://www.vidking.net",
+
+    "Sec-Fetch-Dest":
+      "empty",
+
+    "Sec-Fetch-Mode":
+      "cors",
+
+    "Sec-Fetch-Site":
+      origin.includes("vidking")
+        ? "same-site"
+        : "cross-site",
+  };
+}
+
+function makeVidKingProxyUrl(
+  absoluteUrl,
+  headers
+) {
+  return (
+    VIDKING_PROXY_PATH +
+    "?url=" +
+    encodeURIComponent(absoluteUrl) +
+    "&headers=" +
+    encodeURIComponent(
+      JSON.stringify(headers || {})
+    )
+  );
+}
+
+function resolveHlsUrl(
+  value,
+  baseUrl
+) {
+  try {
+    return new URL(
+      value,
+      baseUrl
+    ).href;
+  } catch {
+    return value;
+  }
+}
+
+function rewriteHlsPlaylist(
+  playlist,
+  playlistUrl,
+  headers
+) {
+  return String(playlist)
+    .split(/\r?\n/)
+    .map(line => {
+      const trimmed =
+        line.trim();
+
+      if (!trimmed) {
+        return line;
+      }
+
+      /*
+       * Rewrite URI="..." attributes used by:
+       * EXT-X-KEY
+       * EXT-X-MAP
+       * EXT-X-MEDIA
+       * EXT-X-I-FRAME-STREAM-INF
+       */
+      if (
+        trimmed.startsWith("#") &&
+        /URI="[^"]+"/i.test(line)
+      ) {
+        return line.replace(
+          /URI="([^"]+)"/gi,
+          (_, uri) => {
+            const absolute =
+              resolveHlsUrl(
+                uri,
+                playlistUrl
+              );
+
+            return (
+              `URI="` +
+              makeVidKingProxyUrl(
+                absolute,
+                headers
+              ) +
+              `"`
+            );
+          }
+        );
+      }
+
+      /*
+       * Leave normal HLS metadata untouched.
+       */
+      if (
+        trimmed.startsWith("#")
+      ) {
+        return line;
+      }
+
+      /*
+       * Rewrite child playlists,
+       * media segments and subtitle files.
+       */
+      const absolute =
+        resolveHlsUrl(
+          trimmed,
+          playlistUrl
+        );
+
+      return makeVidKingProxyUrl(
+        absolute,
+        headers
+      );
+    })
+    .join("\n");
+}
+
 async function getNetmirrorCookie() {
 
   console.log("INITIALIZING NET11 SESSION");
@@ -1121,6 +1337,409 @@ const result =
 
   }
 
+}
+
+
+if (
+  pathname ===
+  "/api/vidking-hls-proxy"
+) {
+  try {
+    const rawUrl =
+      query.url;
+
+    if (!rawUrl) {
+      res.statusCode = 400;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            "Missing VidKing url",
+        })
+      );
+    }
+
+    let targetUrl;
+
+    try {
+      targetUrl =
+        decodeURIComponent(
+          String(rawUrl)
+        );
+    } catch {
+      targetUrl =
+        String(rawUrl);
+    }
+
+    let target;
+
+    try {
+      target =
+        new URL(targetUrl);
+    } catch {
+      res.statusCode = 400;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            "Invalid VidKing URL",
+        })
+      );
+    }
+
+    if (
+      target.protocol !== "https:"
+    ) {
+      res.statusCode = 403;
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            "Only HTTPS VidKing URLs are allowed",
+        })
+      );
+    }
+
+    if (
+      !isAllowedVidKingHost(
+        target.hostname
+      )
+    ) {
+      res.statusCode = 403;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+          error:
+            `VidKing host not allowed: ${target.hostname}`,
+        })
+      );
+    }
+
+    const returnedHeaders =
+      decodeVidKingHeaders(
+        query.headers
+      );
+
+    /*
+     * Same precedence as Android:
+     *
+     * defaults
+     * → provider-returned headers
+     * → embedded/explicit headers
+     *
+     * Here query.headers is the final
+     * explicit header object.
+     */
+    const requestHeaders = {
+      ...getVidKingDefaultHeaders(
+        targetUrl
+      ),
+
+      ...returnedHeaders,
+    };
+
+    if (req.headers.range) {
+      requestHeaders.Range =
+        req.headers.range;
+    }
+
+    const controller =
+      new AbortController();
+
+    const timeoutId =
+      setTimeout(
+        () =>
+          controller.abort(),
+        20000
+      );
+
+    let upstream;
+
+    try {
+      upstream =
+        await fetch(
+          targetUrl,
+          {
+            headers:
+              requestHeaders,
+
+            redirect:
+              "follow",
+
+            signal:
+              controller.signal,
+          }
+        );
+    } finally {
+      clearTimeout(
+        timeoutId
+      );
+    }
+
+    if (!upstream.ok) {
+      const failureBody =
+        await upstream.text();
+
+      res.statusCode =
+        upstream.status;
+
+      res.setHeader(
+        "Content-Type",
+        "application/json"
+      );
+
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        "*"
+      );
+
+      return res.end(
+        JSON.stringify({
+          success: false,
+
+          error:
+            `VidKing upstream HTTP ${upstream.status}`,
+
+          host:
+            target.hostname,
+
+          url:
+            targetUrl,
+
+          preview:
+            failureBody.slice(
+              0,
+              300
+            ),
+        })
+      );
+    }
+
+    const contentType =
+      upstream.headers.get(
+        "content-type"
+      ) || "";
+
+    const finalUrl =
+      upstream.url ||
+      targetUrl;
+
+    const isPlaylist =
+      contentType.includes(
+        "application/vnd.apple.mpegurl"
+      ) ||
+      contentType.includes(
+        "application/x-mpegurl"
+      ) ||
+      new URL(finalUrl)
+        .pathname
+        .toLowerCase()
+        .endsWith(".m3u8");
+
+    res.statusCode =
+      upstream.status;
+
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      "*"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "*"
+    );
+
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "Content-Length, Content-Range, Accept-Ranges"
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      isPlaylist
+        ? "no-store, no-cache, must-revalidate"
+        : "public, max-age=300"
+    );
+
+    const acceptRanges =
+      upstream.headers.get(
+        "accept-ranges"
+      );
+
+    const contentRange =
+      upstream.headers.get(
+        "content-range"
+      );
+
+    const contentLength =
+      upstream.headers.get(
+        "content-length"
+      );
+
+    if (acceptRanges) {
+      res.setHeader(
+        "Accept-Ranges",
+        acceptRanges
+      );
+    }
+
+    if (contentRange) {
+      res.setHeader(
+        "Content-Range",
+        contentRange
+      );
+    }
+
+    if (
+      contentLength &&
+      !isPlaylist
+    ) {
+      res.setHeader(
+        "Content-Length",
+        contentLength
+      );
+    }
+
+    if (isPlaylist) {
+      const playlist =
+        await upstream.text();
+
+      if (
+        !playlist
+          .trimStart()
+          .startsWith("#EXTM3U")
+      ) {
+        res.statusCode = 502;
+
+        res.setHeader(
+          "Content-Type",
+          "application/json"
+        );
+
+        return res.end(
+          JSON.stringify({
+            success: false,
+            error:
+              "VidKing returned an invalid HLS playlist",
+            preview:
+              playlist.slice(
+                0,
+                300
+              ),
+          })
+        );
+      }
+
+      const rewritten =
+        rewriteHlsPlaylist(
+          playlist,
+          finalUrl,
+          returnedHeaders
+        );
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.apple.mpegurl"
+      );
+
+      return res.end(
+        rewritten
+      );
+    }
+
+    res.setHeader(
+      "Content-Type",
+      contentType ||
+        "application/octet-stream"
+    );
+
+    if (
+      upstream.body
+    ) {
+      const reader =
+        upstream.body.getReader();
+
+      while (true) {
+        const {
+          done,
+          value,
+        } =
+          await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        res.write(
+          Buffer.from(value)
+        );
+      }
+
+      return res.end();
+    }
+
+    const buffer =
+      Buffer.from(
+        await upstream.arrayBuffer()
+      );
+
+    return res.end(
+      buffer
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : String(error);
+
+    res.statusCode =
+      message.includes(
+        "aborted"
+      )
+        ? 504
+        : 500;
+
+    res.setHeader(
+      "Content-Type",
+      "application/json"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      "*"
+    );
+
+    return res.end(
+      JSON.stringify({
+        success: false,
+        error:
+          message.includes(
+            "aborted"
+          )
+            ? "VidKing proxy timed out"
+            : message,
+      })
+    );
+  }
 }
 
 if (pathname === "/api/movix-hls-proxy") {
