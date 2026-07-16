@@ -107,6 +107,7 @@ const VIDKING_PROXY_PATH =
 
 const VIDKING_ALLOWED_HOSTS = [
   "ironbubble.site",
+  "ironwallnet.net",
 ];
 
 function isAllowedVidKingHost(hostname) {
@@ -1719,8 +1720,45 @@ if (
     }
 
     if (isPlaylist) {
+      const maxPlaylistBytes =
+        2 * 1024 * 1024;
+
+      if (
+        Number(contentLength || 0) >
+        maxPlaylistBytes
+      ) {
+        await upstream.body?.cancel();
+        res.statusCode = 502;
+        return res.end("VidKing playlist exceeds safety limit");
+      }
+
+      const reader =
+        upstream.body?.getReader();
+      const chunks = [];
+      let received = 0;
+
+      if (!reader) {
+        res.statusCode = 502;
+        return res.end("VidKing playlist body missing");
+      }
+
+      while (true) {
+        const { done, value } =
+          await reader.read();
+        if (done) break;
+
+        received += value.byteLength;
+        if (received > maxPlaylistBytes) {
+          await reader.cancel();
+          res.statusCode = 502;
+          return res.end("VidKing playlist exceeds safety limit");
+        }
+        chunks.push(Buffer.from(value));
+      }
+
       const playlist =
-        await upstream.text();
+        Buffer.concat(chunks, received)
+          .toString("utf8");
 
       if (
         !playlist
@@ -2686,9 +2724,15 @@ if (pathname === "/api/vidking") {
           provider: "VidKing",
           quality: source.quality || "Auto",
 
-          // Android/MPV can request this directly. A later Railway request may
-          // leave through a different egress IP and ironbubble then returns 403.
-          url: source.url,
+          // The CDN rejects direct phone requests even with the correct
+          // Referer/Origin. Keep playlist, child-playlist, key and segment
+          // requests on the bounded allowlisted proxy instead.
+          url:
+            "https://debflix-scraper-production.up.railway.app" +
+            makeVidKingProxyUrl(
+              source.url,
+              getVidKingDefaultHeaders(source.url)
+            ),
 
           // These are required by ironbubble for both the master playlist and
           // its child playlists/segments. Android forwards proxyHeaders to MPV.
