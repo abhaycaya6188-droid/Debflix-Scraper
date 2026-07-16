@@ -2587,7 +2587,14 @@ if (pathname === "/api/vidking") {
           provider: "VidKing",
           quality: source.quality || "Auto",
 
-          url: source.url,
+          // Keep extraction and HLS delivery on the same Railway backend.
+          // ironbubble URLs are short-lived and can reject a different client/IP.
+          url:
+            "https://debflix-scraper-production.up.railway.app" +
+            makeVidKingProxyUrl(
+              source.url,
+              getVidKingDefaultHeaders(source.url)
+            ),
 
           type: "hls"
 
