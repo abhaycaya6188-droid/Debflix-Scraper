@@ -396,7 +396,26 @@ if (pathname === "/api/tmdb-home") {
   res.statusCode = 200;
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=3600");
-  return res.end(JSON.stringify(Object.fromEntries(entries)));
+  const home = Object.fromEntries(entries);
+  home.trendingMovies = home.trendingMovies.length
+    ? home.trendingMovies
+    : (home.nowPlaying.length ? home.nowPlaying : home.topRatedMovies);
+  home.popularMovies = home.popularMovies.length
+    ? home.popularMovies
+    : home.topRatedMovies;
+  home.upcoming = home.upcoming.length
+    ? home.upcoming
+    : home.nowPlaying;
+  home.trendingTv = home.trendingTv.length
+    ? home.trendingTv
+    : (home.popularTv.length ? home.popularTv : home.airingToday);
+  home.topRatedTv = home.topRatedTv.length
+    ? home.topRatedTv
+    : home.popularTv;
+  home.onTheAir = home.onTheAir.length
+    ? home.onTheAir
+    : home.airingToday;
+  return res.end(JSON.stringify(home));
 }
 
 function normalizeTitle(str = "") {
