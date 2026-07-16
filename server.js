@@ -366,6 +366,39 @@ if (req.method === "OPTIONS") {
 const pathname = parsed.pathname;
 const query = parsed.query;
 
+if (pathname === "/api/tmdb-home") {
+  const categories = {
+    trendingMovies: "trending/movie/week",
+    popularMovies: "movie/popular",
+    nowPlaying: "movie/now_playing",
+    upcoming: "movie/upcoming",
+    topRatedMovies: "movie/top_rated",
+    trendingTv: "trending/tv/week",
+    popularTv: "tv/popular",
+    topRatedTv: "tv/top_rated",
+    airingToday: "tv/airing_today",
+    onTheAir: "tv/on_the_air",
+  };
+
+  const entries = await Promise.all(
+    Object.entries(categories).map(async ([name, path]) => {
+      try {
+        const target = `https://api.themoviedb.org/3/${path}?api_key=${TMDB_API_KEY}`;
+        const response = await fetch(target, { signal: AbortSignal.timeout(10000) });
+        const data = response.ok ? await response.json() : { results: [] };
+        return [name, data.results || []];
+      } catch {
+        return [name, []];
+      }
+    })
+  );
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=3600");
+  return res.end(JSON.stringify(Object.fromEntries(entries)));
+}
+
 function normalizeTitle(str = "") {
     return str
         .toLowerCase()
