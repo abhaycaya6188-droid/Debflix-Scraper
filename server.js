@@ -198,10 +198,10 @@ function getVidKingDefaultHeaders(targetUrl) {
     Accept: "*/*",
 
     Referer:
-      "https://www.vidking.net/",
+      "https://player.videasy.to/",
 
     Origin:
-      "https://www.vidking.net",
+      "https://player.videasy.to",
 
     "Sec-Fetch-Dest":
       "empty",
