@@ -1742,6 +1742,82 @@ if (
   }
 }
 
+if (pathname === "/api/movix-vidmoly-resolve") {
+  try {
+    const embedUrl = String(query.url || "");
+    const parsedEmbed = new URL(embedUrl);
+    const embedHost = parsedEmbed.hostname.toLowerCase();
+
+    if (!/(^|\.)vidmoly\.(biz|me)$/.test(embedHost)) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ success: false, error: "Unsupported Vidmoly URL" }));
+    }
+
+    const userAgent =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36";
+    const embedResponse = await fetch(parsedEmbed.href, {
+      headers: {
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Referer: "https://movix.cash/",
+        "User-Agent": userAgent,
+      },
+      redirect: "follow",
+    });
+    const html = await embedResponse.text();
+    const patterns = [
+      /sources\s*:\s*\[\s*\{\s*file\s*:\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i,
+      /file\s*:\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i,
+      /["'](https?:\/\/[^"'\\\s]+\.m3u8[^"'\\\s]*)["']/i,
+    ];
+    let streamUrl = "";
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        streamUrl = match[1]
+          .replace(/&amp;/g, "&")
+          .replace(/&#x2F;/gi, "/")
+          .replace(/&#47;/g, "/")
+          .replace(/\\\//g, "/");
+        break;
+      }
+    }
+
+    if (!embedResponse.ok || !streamUrl) {
+      res.statusCode = 502;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({
+        success: false,
+        error: !embedResponse.ok
+          ? `Vidmoly page HTTP ${embedResponse.status}`
+          : "No Vidmoly HLS stream found",
+      }));
+    }
+
+    const proxyBase = "https://debflix-scraper-production.up.railway.app";
+    const playableUrl =
+      `${proxyBase}/api/movix-hls-proxy?url=${encodeURIComponent(streamUrl)}` +
+      `&referer=${encodeURIComponent(parsedEmbed.origin + "/")}`;
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "no-store");
+    return res.end(JSON.stringify({
+      success: true,
+      stream: {
+        url: playableUrl,
+        streamType: "M3U8",
+        host: new URL(streamUrl).hostname,
+        referer: parsedEmbed.origin + "/",
+      },
+    }));
+  } catch (e) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ success: false, error: e.message || String(e) }));
+  }
+}
+
 if (pathname === "/api/movix-hls-proxy") {
 
   try {
@@ -1809,6 +1885,8 @@ if (pathname === "/api/movix-hls-proxy") {
     const allowedHosts = [
       "finepulfe.xyz",
       "vmeas.cloud",
+      "vmwesa.online",
+      "vmwesa.com",
     ];
 
     const allowed =
@@ -1843,10 +1921,7 @@ if (pathname === "/api/movix-hls-proxy") {
       Accept: "*/*",
 
       Referer:
-        "https://cinestream.info/",
-
-      Origin:
-        "https://cinestream.info",
+        String(query.referer || "https://cinestream.info/"),
     };
 
     /*
@@ -1923,7 +1998,7 @@ if (pathname === "/api/movix-hls-proxy") {
       mediaUrl =>
         `${proxyBase}/api/movix-hls-proxy?url=${encodeURIComponent(
           mediaUrl
-        )}`;
+        )}&referer=${encodeURIComponent(requestHeaders.Referer)}`;
 
     if (isPlaylist) {
 
