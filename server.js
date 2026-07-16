@@ -418,6 +418,53 @@ if (pathname === "/api/tmdb-home") {
   return res.end(JSON.stringify(home));
 }
 
+if (pathname === "/api/tmdb-details") {
+  try {
+    const type = query.type === "tv" ? "tv" : query.type === "movie" ? "movie" : "";
+    const id = String(query.id || "");
+    const season = String(query.season || "");
+    const providers = query.providers === "1";
+
+    if (!type || !/^\d+$/.test(id) || (season && !/^\d+$/.test(season))) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ error: "Invalid details request" }));
+    }
+
+    let path;
+    if (season) {
+      if (type !== "tv") throw new Error("Seasons are TV-only");
+      path = `tv/${id}/season/${season}`;
+    } else if (providers) {
+      path = `${type}/${id}/watch/providers`;
+    } else {
+      path = `${type}/${id}`;
+    }
+
+    const target = new URL(`https://api.themoviedb.org/3/${path}`);
+    target.searchParams.set("api_key", TMDB_API_KEY);
+    if (!season && !providers) {
+      target.searchParams.set(
+        "append_to_response",
+        type === "movie"
+          ? "credits,videos,similar,recommendations,release_dates,images,external_ids"
+          : "credits,videos,similar,recommendations,content_ratings,images,external_ids"
+      );
+    }
+
+    const upstream = await fetch(target, { signal: AbortSignal.timeout(12000) });
+    const body = await upstream.text();
+    res.statusCode = upstream.status;
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=3600");
+    return res.end(body);
+  } catch (error) {
+    res.statusCode = 502;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ error: "Details relay failed", detail: String(error) }));
+  }
+}
+
 function normalizeTitle(str = "") {
     return str
         .toLowerCase()
