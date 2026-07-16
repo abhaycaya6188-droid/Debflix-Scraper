@@ -2690,6 +2690,10 @@ if (pathname === "/api/vidking") {
           // leave through a different egress IP and ironbubble then returns 403.
           url: source.url,
 
+          // These are required by ironbubble for both the master playlist and
+          // its child playlists/segments. Android forwards proxyHeaders to MPV.
+          proxyHeaders: getVidKingDefaultHeaders(source.url),
+
           type: "hls"
 
         });

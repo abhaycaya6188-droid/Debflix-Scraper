@@ -230,6 +230,7 @@ async function getVideasySources(query) {
                 streamType: "M3U8",
                 codec: "HLS",
                 language: "Multi",
+                proxyHeaders: VIDEASY_HEADERS,
                 subtitles
             }));
 
