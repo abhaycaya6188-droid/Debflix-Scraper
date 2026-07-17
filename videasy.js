@@ -14,6 +14,22 @@ const VIDEASY_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9"
 };
 
+// The seed service currently challenges Railway requests using Videasy's
+// macOS fingerprint, while the same public API accepts VidKing's browser
+// fingerprint. This affects seed acquisition only; playback retains Videasy's
+// required Origin and Referer above.
+const VIDEASY_SEED_HEADERS = {
+    Origin: "https://www.vidking.net",
+    Referer: "https://www.vidking.net/",
+    "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/149.0.0.0 Safari/537.36",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0"
+};
+
 function doubleEncodeTitle(title) {
     return encodeURIComponent(
         encodeURIComponent(title || "")
@@ -31,7 +47,7 @@ async function getSeed(tmdbId) {
             `&_t=${Date.now()}`;
 
         const res = await fetch(url, {
-            headers: VIDEASY_HEADERS,
+            headers: VIDEASY_SEED_HEADERS,
             signal: AbortSignal.timeout(3500)
         });
 
