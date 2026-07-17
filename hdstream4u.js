@@ -135,31 +135,37 @@ async function resolvePlayer(playerUrl) {
 
   const html = await fetchText(parsed.href, "https://hdstream4u.com/");
   const unpacked = unpackPlayer(html);
-  const urls = [...unpacked.matchAll(/https?:\/\/[^"'\s]+\.m3u8[^"'\s]*/gi)]
-    .map(match => match[0].replace(/\\\//g, "/"));
-  const master = urls.find(value => /master\.m3u8/i.test(value)) || urls[0];
-  if (!master) throw new Error("HDStream4U playlist was not found");
+  const urls = [...unpacked.matchAll(/(?:https?:\/\/|\/)[^"'\s]+\.m3u8[^"'\s]*/gi)]
+    .map(match => new URL(match[0].replace(/\\\//g, "/"), parsed.origin).href);
+  const masters = [
+    ...urls.filter(value => /master\.m3u8/i.test(value)),
+    ...urls.filter(value => !/master\.m3u8/i.test(value)),
+  ];
+  if (!masters.length) throw new Error("HDStream4U playlist was not found");
 
   // These masters often declare separate audio renditions even though each
   // video child already contains AAC audio. MPV can spend a minute opening all
   // of those large playlists. Return the highest combined child directly.
-  try {
-    const playlist = await fetchText(master, playerUrl);
-    const lines = playlist.split(/\r?\n/);
-    const variants = [];
-    for (let index = 0; index < lines.length; index += 1) {
-      if (!lines[index].startsWith("#EXT-X-STREAM-INF:")) continue;
-      const bandwidth = Number(lines[index].match(/BANDWIDTH=(\d+)/i)?.[1] || 0);
-      const child = lines.slice(index + 1).find(line => line.trim() && !line.startsWith("#"));
-      if (child) variants.push({ bandwidth, url: new URL(child.trim(), master).href });
+  for (const master of [...new Set(masters)]) {
+    try {
+      const playlist = await fetchText(master, playerUrl);
+      if (!playlist.trimStart().startsWith("#EXTM3U")) continue;
+      const lines = playlist.split(/\r?\n/);
+      const variants = [];
+      for (let index = 0; index < lines.length; index += 1) {
+        if (!lines[index].startsWith("#EXT-X-STREAM-INF:")) continue;
+        const bandwidth = Number(lines[index].match(/BANDWIDTH=(\d+)/i)?.[1] || 0);
+        const child = lines.slice(index + 1).find(line => line.trim() && !line.startsWith("#"));
+        if (child) variants.push({ bandwidth, url: new URL(child.trim(), master).href });
+      }
+      variants.sort((a, b) => b.bandwidth - a.bandwidth);
+      return variants[0]?.url || master;
+    } catch (error) {
+      console.error("HDStream4U server fallback failed:", error.message);
     }
-    variants.sort((a, b) => b.bandwidth - a.bandwidth);
-    if (variants[0]?.url) return variants[0].url;
-  } catch (error) {
-    console.error("HDStream4U variant selection failed:", error.message);
   }
 
-  return master;
+  throw new Error("No working HDStream4U playlist server");
 }
 
 async function getStreams({ title, year, type = "movie", season, episode, proxyBase }) {
