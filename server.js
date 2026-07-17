@@ -2553,7 +2553,7 @@ if (pathname === "/api/hdstream4u") {
   }
 }
 
-if (pathname === "/api/hdstream4u-proxy") {
+if (pathname.startsWith("/api/hdstream4u-proxy")) {
   try {
     const target = new URL(String(query.url || ""));
     if (!/(^|\.)(hdstream4u\.com|acek-cdn\.com)$/i.test(target.hostname)) {
@@ -2583,17 +2583,21 @@ if (pathname === "/api/hdstream4u-proxy") {
 
     if (isPlaylist) {
       const proxyBase = `https://${req.headers.host || "oracle.debflicks.com"}`;
+      const makeProxyUrl = absolute => {
+        const extension = new URL(absolute).pathname.match(/\.(m3u8|ts|aac|vtt|key)$/i)?.[0] || ".bin";
+        return `${proxyBase}/api/hdstream4u-proxy/media${extension}?url=${encodeURIComponent(absolute)}`;
+      };
       const rewritten = body.toString("utf8").split(/\r?\n/).map(line => {
         const trimmed = line.trim();
         if (!trimmed) return line;
         if (trimmed.startsWith("#")) {
           return line.replace(/URI="([^"]+)"/gi, (_, uri) => {
             const absolute = new URL(uri, target).href;
-            return `URI="${proxyBase}/api/hdstream4u-proxy?url=${encodeURIComponent(absolute)}"`;
+            return `URI="${makeProxyUrl(absolute)}"`;
           });
         }
         const absolute = new URL(trimmed, target).href;
-        return `${proxyBase}/api/hdstream4u-proxy?url=${encodeURIComponent(absolute)}`;
+        return makeProxyUrl(absolute);
       }).join("\n");
       res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
       return res.end(rewritten);

@@ -169,7 +169,7 @@ async function getStreams({ title, year, type = "movie", season, episode, proxyB
       streams.push({
         name: "HDStream4U",
         title: `${title}${type === "tv" ? ` S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}` : ""}`,
-        url: `${proxyBase}/api/hdstream4u-proxy?url=${encodeURIComponent(playlist)}`,
+        url: `${proxyBase}/api/hdstream4u-proxy/master.m3u8?url=${encodeURIComponent(playlist)}`,
         quality: "Auto",
         streamType: "M3U8",
         provider: "HDStream4U",
