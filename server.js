@@ -17,6 +17,7 @@ const cinefreak = require("./cinefreak");
 const cinecloud = require("./cinecloud");
 const cinemm = require("./cinemm");
 const fourKhdhub = require("./4khdhub");
+const hdstream4u = require("./hdstream4u");
 const ctg = require("./provider/ctg/engine");
 const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
@@ -2504,6 +2505,117 @@ if (
 }
 
 
+
+if (pathname === "/api/hdstream4u") {
+  res.setHeader("Content-Type", "application/json");
+
+  try {
+    const id = String(query.id || "");
+    const type = query.type === "tv" ? "tv" : "movie";
+    if (!/^\d+$/.test(id)) {
+      res.statusCode = 400;
+      return res.end(JSON.stringify({ success: false, streams: [], error: "Invalid TMDB id" }));
+    }
+
+    let title = String(query.title || "").trim();
+    let year = String(query.year || "").trim();
+    if (!title) {
+      const tmdbResponse = await fetch(
+        `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`,
+        { signal: AbortSignal.timeout(12_000) }
+      );
+      if (!tmdbResponse.ok) throw new Error(`TMDB returned ${tmdbResponse.status}`);
+      const media = await tmdbResponse.json();
+      title = type === "tv" ? media.name : media.title;
+      const date = type === "tv" ? media.first_air_date : media.release_date;
+      year = String(date || "").slice(0, 4);
+    }
+    const proxyBase = `https://${req.headers.host || "oracle.debflicks.com"}`;
+    const streams = await hdstream4u.getStreams({
+      title,
+      year,
+      type,
+      season: query.season,
+      episode: query.episode,
+      proxyBase,
+    });
+
+    return res.end(JSON.stringify({ success: true, provider: "HDStream4U", streams }));
+  } catch (error) {
+    console.error("HDSTREAM4U ERROR:", error);
+    res.statusCode = 502;
+    return res.end(JSON.stringify({
+      success: false,
+      provider: "HDStream4U",
+      streams: [],
+      error: error?.message || String(error),
+    }));
+  }
+}
+
+if (pathname === "/api/hdstream4u-proxy") {
+  try {
+    const target = new URL(String(query.url || ""));
+    if (!/(^|\.)(hdstream4u\.com|acek-cdn\.com)$/i.test(target.hostname)) {
+      res.statusCode = 403;
+      return res.end("Unsupported HDStream4U host");
+    }
+
+    const upstream = await fetch(target, {
+      headers: {
+        Accept: "*/*",
+        Origin: "https://hdstream4u.com",
+        Referer: "https://hdstream4u.com/",
+        "User-Agent": hdstream4u.USER_AGENT,
+      },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!upstream.ok) {
+      res.statusCode = upstream.status;
+      return res.end(`HDStream4U upstream returned ${upstream.status}`);
+    }
+
+    const body = Buffer.from(await upstream.arrayBuffer());
+    const isPlaylist = target.pathname.toLowerCase().endsWith(".m3u8") ||
+      body.subarray(0, 7).toString("utf8") === "#EXTM3U";
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", isPlaylist ? "no-store" : "public, max-age=3600");
+
+    if (isPlaylist) {
+      const proxyBase = `https://${req.headers.host || "oracle.debflicks.com"}`;
+      const rewritten = body.toString("utf8").split(/\r?\n/).map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return line;
+        if (trimmed.startsWith("#")) {
+          return line.replace(/URI="([^"]+)"/gi, (_, uri) => {
+            const absolute = new URL(uri, target).href;
+            return `URI="${proxyBase}/api/hdstream4u-proxy?url=${encodeURIComponent(absolute)}"`;
+          });
+        }
+        const absolute = new URL(trimmed, target).href;
+        return `${proxyBase}/api/hdstream4u-proxy?url=${encodeURIComponent(absolute)}`;
+      }).join("\n");
+      res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+      return res.end(rewritten);
+    }
+
+    // The provider prefixes MPEG-TS segments with a complete 1x1 PNG. Remove
+    // everything through PNG IEND so Android and web players receive real TS.
+    const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    let media = body;
+    if (body.subarray(0, 8).equals(pngSignature)) {
+      const iend = body.indexOf(Buffer.from("IEND"));
+      if (iend >= 0 && iend + 8 < body.length) media = body.subarray(iend + 8);
+    }
+    res.setHeader("Content-Type", "video/mp2t");
+    res.setHeader("Content-Length", media.length);
+    return res.end(media);
+  } catch (error) {
+    console.error("HDSTREAM4U PROXY ERROR:", error);
+    res.statusCode = 502;
+    return res.end("HDStream4U proxy failed");
+  }
+}
 
 if (pathname === "/api/hls-proxy") {
 
