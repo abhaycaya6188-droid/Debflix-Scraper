@@ -1417,13 +1417,38 @@ const result =
     const result =
       await getVideasySources(query);
 
+    // Android's source list only needs playback metadata. Videasy may attach
+    // hundreds of subtitle objects to every quality and repeat the same list
+    // again at the response root. Besides wasting heap, those objects do not
+    // match the mobile DTO's string subtitle field and make Gson reject the
+    // complete provider response. Keep this endpoint small and deterministic.
+    const mobileStreams =
+      Array.isArray(result.streams)
+        ? result.streams.map(stream => {
+            const {
+              subtitles,
+              ...playbackStream
+            } = stream;
+            return playbackStream;
+          })
+        : [];
+
+    const mobileResult = {
+      success: result.success,
+      provider: result.provider,
+      server: result.server,
+      tmdbId: result.tmdbId,
+      streams: mobileStreams,
+      error: result.error,
+    };
+
     res.setHeader(
       "Content-Type",
       "application/json"
     );
 
     return res.end(
-      JSON.stringify(result)
+      JSON.stringify(mobileResult)
     );
 
   } catch (e) {
