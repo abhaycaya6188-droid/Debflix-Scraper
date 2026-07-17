@@ -231,6 +231,11 @@ catch {
             if (type === "ignore")
                 return;
 
+            const siblingText = link.nextSibling?.data || "";
+            const listingMeta = siblingText.match(
+                /(\d{2}-[A-Za-z]{3}-\d{4}\s+\d{2}:\d{2})\s+([^\s]+)\s*$/
+            );
+
             entries.push({
 
                 type,
@@ -243,9 +248,9 @@ catch {
 
                 path: new URL(url).pathname,
 
-                modified: "",
+                modified: listingMeta ? listingMeta[1] : "",
 
-                size: ""
+                size: listingMeta ? listingMeta[2] : ""
 
             });
 
