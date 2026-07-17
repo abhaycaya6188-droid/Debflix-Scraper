@@ -1,12 +1,14 @@
 const cinecloud = require("./cinecloud");
 const cheerio = require("cheerio");
 
-const BASE = "https://cinefreak.nl";
+// CineFreak moved its active search and content site from .nl to .net.
+// The former host intermittently resets Oracle connections, which made
+// Premium Source 11 disappear before resolution even started.
+const BASE = "https://cinefreak.net";
 
 const HEADERS = {
     "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36",
-    Cookie: "xla=s4t",
 };
 
 async function search(title) {
