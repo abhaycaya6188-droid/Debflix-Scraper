@@ -2575,13 +2575,12 @@ if (pathname.startsWith("/api/hdstream4u-proxy")) {
       return res.end(`HDStream4U upstream returned ${upstream.status}`);
     }
 
-    const body = Buffer.from(await upstream.arrayBuffer());
-    const isPlaylist = target.pathname.toLowerCase().endsWith(".m3u8") ||
-      body.subarray(0, 7).toString("utf8") === "#EXTM3U";
+    const isPlaylist = target.pathname.toLowerCase().endsWith(".m3u8");
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Cache-Control", isPlaylist ? "no-store" : "public, max-age=3600");
 
     if (isPlaylist) {
+      const body = Buffer.from(await upstream.arrayBuffer());
       const proxyBase = `https://${req.headers.host || "oracle.debflicks.com"}`;
       const makeProxyUrl = absolute => {
         const extension = new URL(absolute).pathname.match(/\.(m3u8|ts|aac|vtt|key)$/i)?.[0] || ".bin";
@@ -2603,17 +2602,40 @@ if (pathname.startsWith("/api/hdstream4u-proxy")) {
       return res.end(rewritten);
     }
 
-    // The provider prefixes MPEG-TS segments with a complete 1x1 PNG. Remove
-    // everything through PNG IEND so Android and web players receive real TS.
+    // The provider prefixes MPEG-TS segments with a complete 1x1 PNG. Strip
+    // that tiny prefix, then stream each segment immediately. Buffering the
+    // complete 2-5 MB segment here caused 30-60 second player startup delays.
     const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    let media = body;
-    if (body.subarray(0, 8).equals(pngSignature)) {
-      const iend = body.indexOf(Buffer.from("IEND"));
-      if (iend >= 0 && iend + 8 < body.length) media = body.subarray(iend + 8);
-    }
+    const reader = upstream.body?.getReader();
+    if (!reader) throw new Error("HDStream4U returned no media body");
+
+    let prefix = Buffer.alloc(0);
+    let prefixHandled = false;
     res.setHeader("Content-Type", "video/mp2t");
-    res.setHeader("Content-Length", media.length);
-    return res.end(media);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      let chunk = Buffer.from(value);
+
+      if (!prefixHandled) {
+        prefix = Buffer.concat([prefix, chunk]);
+        if (prefix.length < 8) continue;
+
+        if (prefix.subarray(0, 8).equals(pngSignature)) {
+          const iend = prefix.indexOf(Buffer.from("IEND"));
+          if (iend < 0) continue;
+          chunk = prefix.subarray(iend + 8);
+        } else {
+          chunk = prefix;
+        }
+        prefix = Buffer.alloc(0);
+        prefixHandled = true;
+      }
+
+      if (chunk.length) res.write(chunk);
+    }
+    return res.end();
   } catch (error) {
     console.error("HDSTREAM4U PROXY ERROR:", error);
     res.statusCode = 502;
