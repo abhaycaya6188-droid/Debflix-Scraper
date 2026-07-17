@@ -1207,12 +1207,37 @@ if (pathname === "/api/cinefreak") {
       }));
     }
 
-    // TMDB lookup
-    const tmdbRes = await fetch(
-      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
-    );
+    const suppliedTitle = String(query.title || "").trim();
+    const suppliedYear = String(query.year || "").match(/\b(19|20)\d{2}\b/)?.[0] || "";
 
-    const movie = await tmdbRes.json();
+    // The caller already has metadata. Prefer it so a transient TMDB reset
+    // cannot make an otherwise healthy CineFreak result disappear.
+    let movie;
+
+    if (suppliedTitle) {
+      movie = type === "tv"
+        ? {
+            name: suppliedTitle,
+            original_name: suppliedTitle,
+            first_air_date: suppliedYear ? `${suppliedYear}-01-01` : ""
+          }
+        : {
+            title: suppliedTitle,
+            original_title: suppliedTitle,
+            release_date: suppliedYear ? `${suppliedYear}-01-01` : ""
+          };
+    } else {
+      const tmdbRes = await fetch(
+        `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+
+      if (!tmdbRes.ok) {
+        throw new Error(`TMDB HTTP ${tmdbRes.status}`);
+      }
+
+      movie = await tmdbRes.json();
+    }
 
     const title =
       type === "tv"
