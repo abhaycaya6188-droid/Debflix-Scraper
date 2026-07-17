@@ -155,7 +155,7 @@ async function getStreams({ title, year, type = "movie", season, episode, proxyB
   // requested episode when that association is available.
   if (type === "tv" && episode) {
     const episodePattern = new RegExp(
-      `(?:episode|ep|e)[\\s_-]*0?${Number(episode)}[\\s\\S]{0,1500}?(https?:\\/\\/hdstream4u\\.com\\/file\\/[a-z0-9]+)`,
+      `episode[\\s_-]*0?${Number(episode)}(?:\\D|$)[\\s\\S]{0,500}?(https?:\\/\\/hdstream4u\\.com\\/file\\/[a-z0-9]+)`,
       "ig"
     );
     const episodePlayers = [...page.matchAll(episodePattern)].map(result => result[1]);
