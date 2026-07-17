@@ -24,7 +24,7 @@ async function getSeed(tmdbId) {
     let lastStatus = 0;
     let lastBody = "";
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
         const url =
             `${VIDEASY_API}/seed?mediaId=` +
             encodeURIComponent(tmdbId) +
@@ -32,7 +32,7 @@ async function getSeed(tmdbId) {
 
         const res = await fetch(url, {
             headers: VIDEASY_HEADERS,
-            signal: AbortSignal.timeout(5000)
+            signal: AbortSignal.timeout(3500)
         });
 
         const body = await res.text();
@@ -165,7 +165,8 @@ async function getVideasySources(query) {
             `?title=${encodedTitle}&${params.toString()}`;
 
         const sourceRes = await fetch(url, {
-            headers: VIDEASY_HEADERS
+            headers: VIDEASY_HEADERS,
+            signal: AbortSignal.timeout(6000)
         });
 
         const encryptedBody =
