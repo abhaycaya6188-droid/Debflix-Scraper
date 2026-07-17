@@ -108,6 +108,13 @@ const VIDKING_PROXY_PATH =
 const VIDKING_ALLOWED_HOSTS = [
   "ironbubble.site",
   "ironwallnet.net",
+  "randomseg01.site",
+  "checknews02.site",
+  "cartlegion03.site",
+  "lookcrew11.site",
+  "diskphone12.site",
+  "sandstorm13.site",
+  "losangeles14.site",
 ];
 
 function isAllowedVidKingHost(hostname) {
