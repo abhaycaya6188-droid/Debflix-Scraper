@@ -2556,7 +2556,11 @@ if (pathname === "/api/hdstream4u") {
 if (pathname.startsWith("/api/hdstream4u-proxy")) {
   try {
     const target = new URL(String(query.url || ""));
-    if (!/(^|\.)(hdstream4u\.com|acek-cdn\.com|dramiyos-cdn\.com)$/i.test(target.hostname)) {
+    const isKnownProviderHost =
+      /(^|\.)(hdstream4u\.com|acek-cdn\.com|dramiyos-cdn\.com)$/i.test(target.hostname);
+    const isSignedSegmentHost =
+      /^p\d+-ad-site-sign-[a-z0-9-]+\.tiktokcdn\.com$/i.test(target.hostname);
+    if (!isKnownProviderHost && !isSignedSegmentHost) {
       res.statusCode = 403;
       return res.end("Unsupported HDStream4U host");
     }
