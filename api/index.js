@@ -4,6 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const http = require('http');
+const crypto = require('crypto');
+const { handleMultiMovies } = require('../provider/multimovies/handler');
+
+const MULTIMOVIES_TMDB_KEY =
+  process.env.TMDB_API_KEY || '7bf6b8cf4d8a661e8a90ae825995471d';
+const MULTIMOVIES_PROXY_SECRET =
+  process.env.MULTIMOVIES_PROXY_SECRET ||
+  crypto.createHash('sha256').update(`multimovies:${MULTIMOVIES_TMDB_KEY}`).digest('hex');
 
 const REFERER = 'https://vidlink.pro/';
 const ORIGIN  = 'https://vidlink.pro';
@@ -131,6 +139,18 @@ module.exports = async function handler(req, res) {
 
   const { searchParams } = new URL(req.url, 'http://localhost');
   const q = Object.fromEntries(searchParams);
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+
+  if (pathname === '/api/multimovies' || pathname === '/api/multimovies-hls-proxy') {
+    const forwardedProtocol = String(req.headers['x-forwarded-proto'] || 'https')
+      .split(',', 1)[0]
+      .trim();
+    return handleMultiMovies(req, res, pathname, q, {
+      tmdbApiKey: MULTIMOVIES_TMDB_KEY,
+      secret: MULTIMOVIES_PROXY_SECRET,
+      proxyBase: `${forwardedProtocol}://${req.headers.host}`,
+    });
+  }
 
   // Proxy mode: /api?url=...
   if (q.url) {
