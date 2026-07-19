@@ -18,6 +18,7 @@ const cinecloud = require("./cinecloud");
 const cinemm = require("./cinemm");
 const fourKhdhub = require("./4khdhub");
 const hdstream4u = require("./hdstream4u");
+const { handleMultiMovies } = require("./provider/multimovies/handler");
 const ctg = require("./provider/ctg/engine");
 const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
@@ -33,6 +34,8 @@ const port = process.env.PORT || 3000;
 
 
 const crypto = require("crypto");
+const multimoviesProxySecret =
+  process.env.MULTIMOVIES_PROXY_SECRET || crypto.randomBytes(32).toString("hex");
 let netmirrorCookie = "";
 let netmirrorCookieTime = 0;
 
@@ -374,6 +377,20 @@ if (req.method === "OPTIONS") {
     const parsed = url.parse(req.url, true);
 const pathname = parsed.pathname;
 const query = parsed.query;
+
+if (
+  pathname === "/api/multimovies" ||
+  pathname === "/api/multimovies-hls-proxy"
+) {
+  const forwardedProtocol = String(req.headers["x-forwarded-proto"] || "https")
+    .split(",", 1)[0]
+    .trim();
+  return handleMultiMovies(req, res, pathname, query, {
+    tmdbApiKey: TMDB_API_KEY,
+    secret: multimoviesProxySecret,
+    proxyBase: `${forwardedProtocol}://${req.headers.host || "oracle.debflicks.com"}`,
+  });
+}
 
 if (pathname === "/api/tmdb-home") {
   const categories = {
