@@ -6,6 +6,7 @@ const { parseResults, rankResult } = require("./search");
 const { extractLinks } = require("./smoothpre");
 const { unpackDeanEdwards } = require("./unpack");
 const { allowedHost, rewritePlaylist, sign } = require("./proxy");
+const { episodePageUrl } = require("./gdmirror");
 
 test("search parser strictly favors matching movie title and year", () => {
   const html = `<article><h2><a href="/movies/interstellar/">Interstellar</a></h2><span>2014</span></article>
@@ -36,4 +37,13 @@ test("proxy accepts disguised playlists/segments and rewrites relative URLs", ()
   assert.match(output, /audio%2Findex\.txt/);
   assert.match(output, /index-f3-v1-a1\.txt/);
   assert.match(output, new RegExp(sign("https://video.onlineartacademy.site/path/index-f3-v1-a1.txt", "https://smoothpre.com/v/code", secret)));
+});
+
+test("TV series pages resolve the exact season and episode", () => {
+  const html = `<a href="/episodes/show-1x1/">Pilot</a><a href="/episodes/show-1x10/">Finale</a>`;
+  assert.equal(
+    episodePageUrl(html, 1, 1, "https://multimovies.study/tvshows/show/"),
+    "https://multimovies.study/episodes/show-1x1/"
+  );
+  assert.throws(() => episodePageUrl(html, 2, 1, "https://multimovies.study/tvshows/show/"));
 });

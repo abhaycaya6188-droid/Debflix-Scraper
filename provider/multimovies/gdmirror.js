@@ -24,9 +24,33 @@ function playerCandidates(html, type, season, episode) {
   return exact.length ? exact : values;
 }
 
+function episodePageUrl(html, season, episode, seriesUrl) {
+  const $ = cheerio.load(html);
+  let match = null;
+  $('a[href*="/episodes/"]').each((_, element) => {
+    if (match) return;
+    const href = $(element).attr("href");
+    let target;
+    try { target = new URL(href, seriesUrl); } catch { return; }
+    const slugMatch = target.pathname.match(/-(\d+)x(\d+)\/?$/i);
+    if (
+      slugMatch &&
+      Number(slugMatch[1]) === Number(season) &&
+      Number(slugMatch[2]) === Number(episode)
+    ) match = target.href;
+  });
+  if (!match) throw new Error(`MultiMovies episode ${season}x${episode} not found`);
+  return match;
+}
+
 async function resolveDooplay(pageUrl, options, session) {
-  const pageResponse = await session.fetch(pageUrl, { headers: { Referer: `${BASE_URL}/` } });
-  const html = await responseText(pageResponse, "MultiMovies title page");
+  let pageResponse = await session.fetch(pageUrl, { headers: { Referer: `${BASE_URL}/` } });
+  let html = await responseText(pageResponse, "MultiMovies title page");
+  if (options.type === "tv") {
+    pageUrl = episodePageUrl(html, options.season, options.episode, pageUrl);
+    pageResponse = await session.fetch(pageUrl, { headers: { Referer: `${BASE_URL}/` } });
+    html = await responseText(pageResponse, "MultiMovies episode page");
+  }
   const players = playerCandidates(html, options.type, options.season, options.episode);
   if (!players.length) throw new Error("MultiMovies page has no Dooplay player data");
   for (const player of players.slice(0, 4)) {
@@ -58,9 +82,31 @@ function sidFrom(url, html) {
 }
 
 async function resolveSmoothpre(embedUrl, session) {
-  const embedResponse = await session.fetch(embedUrl, { headers: { Referer: `${BASE_URL}/` } });
-  const html = await responseText(embedResponse, "GDMirror embed");
-  const finalUrl = embedResponse.url || embedUrl;
+  let embedResponse = await session.fetch(embedUrl, { headers: { Referer: `${BASE_URL}/` } });
+  let html = await responseText(embedResponse, "GDMirror embed");
+  let finalUrl = embedResponse.url || embedUrl;
+  if (new URL(finalUrl).hostname === "streams.iqsmartgames.com" && /\/embed\/tv\//.test(new URL(finalUrl).pathname)) {
+    const value = name => html.match(new RegExp(`let\\s+${name}\\s*=\\s*["']([^"']+)`, "i"))?.[1];
+    const id = value("FinalID");
+    const idType = value("idType");
+    const key = value("myKey");
+    const season = value("season");
+    const episode = value("epname");
+    const playerBase = value("player_base") || "https://pro.iqsmartgames.com";
+    const apiBase = value("api_url") || "https://streams.iqsmartgames.com";
+    if (!id || !idType || !key || !season || !episode) throw new Error("iqsmartgames TV configuration missing");
+    const api = new URL("/myseriesapi", apiBase);
+    api.search = new URLSearchParams({ [idType]: id, season, epname: episode, key }).toString();
+    const seriesResponse = await session.fetch(api, { headers: { Referer: finalUrl, Accept: "application/json" } });
+    if (!seriesResponse.ok) throw new Error(`iqsmartgames series API returned ${seriesResponse.status}`);
+    const series = await seriesResponse.json();
+    const slug = series.data?.find(item => item?.fileslug)?.fileslug;
+    if (!series.success || !slug) throw new Error("iqsmartgames has no file for this episode");
+    const evidenceUrl = new URL(`/evid/${encodeURIComponent(slug)}`, playerBase).href;
+    embedResponse = await session.fetch(evidenceUrl, { headers: { Referer: finalUrl } });
+    html = await responseText(embedResponse, "iqsmartgames episode mirror");
+    finalUrl = embedResponse.url || evidenceUrl;
+  }
   const sid = sidFrom(finalUrl, html);
   const helperUrl = new URL("/embedhelper2.php", finalUrl).href;
   const helper = await session.fetch(helperUrl, {
@@ -77,4 +123,4 @@ async function resolveSmoothpre(embedUrl, session) {
   return { url: new URL(code, base).href, code, sid };
 }
 
-module.exports = { playerCandidates, resolveDooplay, resolveSmoothpre, sidFrom };
+module.exports = { episodePageUrl, playerCandidates, resolveDooplay, resolveSmoothpre, sidFrom };
