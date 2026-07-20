@@ -4,7 +4,12 @@ const crypto = require("crypto");
 const { Readable } = require("stream");
 const { USER_AGENT } = require("./http");
 
-const ALLOWED_HOSTS = ["smoothpre.com", "onlineartacademy.site", "dramiyos-cdn.com"];
+const ALLOWED_HOSTS = [
+  "smoothpre.com",
+  "onlineartacademy.site",
+  "dramiyos-cdn.com",
+  "telescopesforsale.space",
+];
 const PASSTHROUGH_HEADERS = ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified"];
 
 function allowedHost(hostname) {
