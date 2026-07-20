@@ -9,6 +9,8 @@ const ALLOWED_HOSTS = [
   "onlineartacademy.site",
   "dramiyos-cdn.com",
   "telescopesforsale.space",
+  "acek-cdn.com",
+  "goldenfieldcreativeworks.store",
 ];
 const PASSTHROUGH_HEADERS = ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified"];
 

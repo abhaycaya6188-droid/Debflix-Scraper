@@ -34,8 +34,14 @@ const port = process.env.PORT || 3000;
 
 
 const crypto = require("crypto");
+const multimoviesSecretSeed =
+  process.env.MULTIMOVIES_PROXY_SECRET ||
+  process.env.RAILWAY_PROJECT_ID ||
+  process.env.RAILWAY_SERVICE_ID;
 const multimoviesProxySecret =
-  process.env.MULTIMOVIES_PROXY_SECRET || crypto.randomBytes(32).toString("hex");
+  multimoviesSecretSeed
+    ? crypto.createHash("sha256").update(`${multimoviesSecretSeed}:multimovies-proxy-v1`).digest("hex")
+    : crypto.randomBytes(32).toString("hex");
 let netmirrorCookie = "";
 let netmirrorCookieTime = 0;
 
