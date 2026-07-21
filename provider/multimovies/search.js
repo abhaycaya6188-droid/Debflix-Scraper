@@ -45,7 +45,16 @@ function rankResult(result, wanted) {
 
 async function searchMultiMovies({ title, year, type = "movie", session = new CookieSession() }) {
   const response = await session.fetch(`${BASE_URL}/?s=${encodeURIComponent(title)}`, {
-    headers: { Accept: "text/html,application/xhtml+xml" },
+    headers: {
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      Referer: `${BASE_URL}/`,
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "same-origin",
+      "Upgrade-Insecure-Requests": "1",
+    },
   });
   const candidates = parseResults(await responseText(response, "MultiMovies search"))
     .map(result => ({ ...result, score: rankResult(result, { title, year, type }) }))
