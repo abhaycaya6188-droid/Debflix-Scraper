@@ -12,6 +12,7 @@ const ALLOWED_HOSTS = [
   "acek-cdn.com",
   "goldenfieldcreativeworks.store",
   "mountainbikeriding.space",
+  "evergreenbridgeconsult.store",
 ];
 const PASSTHROUGH_HEADERS = ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified"];
 
