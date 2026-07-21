@@ -19,6 +19,7 @@ const cinemm = require("./cinemm");
 const fourKhdhub = require("./4khdhub");
 const hdstream4u = require("./hdstream4u");
 const { handleMultiMovies } = require("./provider/multimovies/handler");
+const { handleMoviesMod } = require("./provider/moviesmod/handler");
 const ctg = require("./provider/ctg/engine");
 const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
@@ -395,6 +396,12 @@ if (
     tmdbApiKey: TMDB_API_KEY,
     secret: multimoviesProxySecret,
     proxyBase: `${forwardedProtocol}://${req.headers.host || "oracle.debflicks.com"}`,
+  });
+}
+
+if (pathname === "/api/moviesmod") {
+  return handleMoviesMod(req, res, pathname, query, {
+    tmdbApiKey: TMDB_API_KEY,
   });
 }
 
