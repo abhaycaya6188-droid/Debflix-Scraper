@@ -27,6 +27,9 @@ const ctg4 = require("./provider/ctg/engine4");
 const ctg5 = require("./provider/ctg/engine5");
 const movixV2 =
   require("./movix-v2");
+  const {
+    handleHDGharTV,
+} = require("./provider/hdghartv/handler");
 const NET_VERIFY = "https://net77.cc";
 const NET_MAIN = "https://net77.cc";
 
@@ -406,6 +409,10 @@ if (
   return handleMoviesMod(req, res, pathname, query, {
     tmdbApiKey: TMDB_API_KEY,
   });
+}
+
+if (pathname === "/api/hdghartv") {
+    return handleHDGharTV(req, res);
 }
 
 if (pathname === "/api/tmdb-home") {
