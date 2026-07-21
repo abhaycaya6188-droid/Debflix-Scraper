@@ -11,6 +11,7 @@ const ALLOWED_HOSTS = [
   "telescopesforsale.space",
   "acek-cdn.com",
   "goldenfieldcreativeworks.store",
+  "mountainbikeriding.space",
 ];
 const PASSTHROUGH_HEADERS = ["content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified"];
 
