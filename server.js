@@ -399,7 +399,10 @@ if (
   });
 }
 
-if (pathname === "/api/moviesmod") {
+if (
+  pathname === "/api/moviesmod" ||
+  pathname === "/api/moviesmod-diagnostic"
+) {
   return handleMoviesMod(req, res, pathname, query, {
     tmdbApiKey: TMDB_API_KEY,
   });
