@@ -16,13 +16,11 @@ async function fetchText(target, referer) {
       Referer: referer || new URL(target).origin + "/",
       "User-Agent": USER_AGENT,
     },
+    redirect: "follow",
     signal: AbortSignal.timeout(20_000),
   });
 
-  if (!response.ok) {
-    throw new Error(`HDStream4U upstream returned ${response.status}`);
-  }
-
+  if (!response.ok) throw new Error(`HDStream4U upstream returned ${response.status}`);
   return response.text();
 }
 
@@ -43,9 +41,12 @@ async function loadCatalogue() {
   if (catalogueCache && Date.now() < catalogueExpiresAt) return catalogueCache;
 
   const domain = await currentDomain();
-  const index = await fetchText(`${domain}/sitemap.xml`);
-  const sitemapUrls = [...index.matchAll(/<loc>([^<]*post-sitemap[^<]*\.xml)<\/loc>/gi)]
+  const index = await fetchText(`${domain}/sitemap.xml`, domain + "/");
+  const listedUrls = [...index.matchAll(/<loc>([^<]+)<\/loc>/gi)]
     .map(match => match[1].replace(/&amp;/g, "&"));
+
+  const sitemapUrls = listedUrls.filter(value => /sitemap/i.test(value));
+  const directUrls = listedUrls.filter(value => !/sitemap/i.test(value));
 
   const maps = await Promise.all(
     sitemapUrls.map(async sitemapUrl => {
@@ -57,10 +58,13 @@ async function loadCatalogue() {
     })
   );
 
-  catalogueCache = maps.flatMap(map =>
-    [...map.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match => match[1])
-  );
-  catalogueExpiresAt = Date.now() + 4 * 60 * 60 * 1000;
+  catalogueCache = [
+    ...directUrls,
+    ...maps.flatMap(map =>
+      [...map.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match => match[1].replace(/&amp;/g, "&"))
+    ),
+  ];
+  catalogueExpiresAt = Date.now() + 60 * 60 * 1000;
   return catalogueCache;
 }
 
@@ -81,8 +85,13 @@ function scoreUrl(target, { title, year, type, season }) {
 
   if (year && found.has(String(year))) score += 35;
   if (type === "tv" && season) {
-    if (slug.includes(`season-${Number(season)}`)) score += 80;
-    else score -= 80;
+    const seasonNumber = Number(season);
+    if (
+      slug.includes(`season-${seasonNumber}`) ||
+      slug.includes(`season-${String(seasonNumber).padStart(2, "0")}`) ||
+      slug.includes(`s${String(seasonNumber).padStart(2, "0")}`)
+    ) score += 80;
+    else score -= 40;
   } else if (slug.includes("full-movie")) {
     score += 20;
   }
@@ -133,19 +142,19 @@ async function resolvePlayer(playerUrl) {
     throw new Error("Unsupported HDStream4U host");
   }
 
-  const html = await fetchText(parsed.href, "https://hdstream4u.com/");
-  const unpacked = unpackPlayer(html);
-  const urls = [...unpacked.matchAll(/(?:https?:\/\/|\/)[^"'\s]+\.m3u8[^"'\s]*/gi)]
-    .map(match => new URL(match[0].replace(/\\\//g, "/"), parsed.origin).href);
+  const html = await fetchText(parsed.href, parsed.origin + "/");
+  const unpacked = unpackPlayer(html) || html;
+  const urls = [...unpacked.matchAll(/(?:https?:\/\/|\/\/|\/)[^"'\s<>]+\.m3u8[^"'\s<>]*/gi)]
+    .map(match => {
+      const raw = match[0].replace(/\\\//g, "/");
+      return new URL(raw.startsWith("//") ? `https:${raw}` : raw, parsed.origin).href;
+    });
   const masters = [
     ...urls.filter(value => /master\.m3u8/i.test(value)),
     ...urls.filter(value => !/master\.m3u8/i.test(value)),
   ];
   if (!masters.length) throw new Error("HDStream4U playlist was not found");
 
-  // These masters often declare separate audio renditions even though each
-  // video child already contains AAC audio. MPV can spend a minute opening all
-  // of those large playlists. Return the highest combined child directly.
   for (const master of [...new Set(masters)]) {
     try {
       const playlist = await fetchText(master, playerUrl);
@@ -169,27 +178,27 @@ async function resolvePlayer(playerUrl) {
 }
 
 async function getStreams({ title, year, type = "movie", season, episode, proxyBase }) {
+  if (!title) return [];
   const match = await findTitlePage({ title, year, type, season });
-  if (!match || match.score < 10) return [];
+  if (!match || match.score < 0) return [];
 
   const page = await fetchText(match.target);
-  let players = [...page.matchAll(/https?:\/\/hdstream4u\.com\/file\/[a-z0-9]+/gi)]
-    .map(result => result[0]);
+  let players = [...page.matchAll(/(?:https?:)?\/\/hdstream4u\.com\/file\/[a-z0-9]+/gi)]
+    .map(result => result[0].startsWith("//") ? `https:${result[0]}` : result[0]);
   players = [...new Set(players)];
 
-  // TV pages usually identify each link near its episode heading. Keep the
-  // requested episode when that association is available.
   if (type === "tv" && episode) {
     const episodePattern = new RegExp(
-      `episode[\\s_-]*0?${Number(episode)}(?:\\D|$)[\\s\\S]{0,500}?(https?:\\/\\/hdstream4u\\.com\\/file\\/[a-z0-9]+)`,
+      `(?:episode|ep)[\\s_:-]*0?${Number(episode)}(?:\\D|$)[\\s\\S]{0,1200}?((?:https?:)?\\/\\/hdstream4u\\.com\\/file\\/[a-z0-9]+)`,
       "ig"
     );
-    const episodePlayers = [...page.matchAll(episodePattern)].map(result => result[1]);
+    const episodePlayers = [...page.matchAll(episodePattern)]
+      .map(result => result[1].startsWith("//") ? `https:${result[1]}` : result[1]);
     if (episodePlayers.length) players = [...new Set(episodePlayers)];
   }
 
   const streams = [];
-  for (const player of players.slice(0, 3)) {
+  for (const player of players.slice(0, 5)) {
     try {
       const playlist = await resolvePlayer(player);
       streams.push({
