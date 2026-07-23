@@ -24,6 +24,7 @@ const ctg4 = require("./provider/ctg/engine4");
 const ctg5 = require("./provider/ctg/engine5");
 const movixV2 =
   require("./movix-v2");
+const moviebox = require("./moviebox");
 const NET_VERIFY = "https://net77.cc";
 const NET_MAIN = "https://net77.cc";
 
@@ -2480,6 +2481,31 @@ return res.end(json);
     return res.end(e.message);
 
 }
+}
+
+if (pathname === "/api/moviebox") {
+  try {
+    const result = await moviebox.getStreams({
+      title: query.title || "",
+      type: query.type || "movie",
+      year: query.year || "",
+      id: Number(query.id),
+      season: Number(query.season || 1),
+      episode: Number(query.episode || 1)
+    });
+
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({
+      success: true,
+      provider: "Premium Source 4",
+      streams: result,
+      subtitles: []
+    }));
+  } catch (e) {
+    console.error("MOVIEBOX ERR:", e);
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ success: false, error: e.message }));
+  }
 }
 
 if (pathname === "/api/vidking") {

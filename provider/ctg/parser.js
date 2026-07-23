@@ -325,6 +325,8 @@ const searchText =
 
     const meta = {
 
+        fullPath,
+
         filename,
 
         extension: extension(filename),
@@ -416,7 +418,44 @@ function validate(meta) {
     if (!meta.title)
         return false;
 
+    if (!isStreamingPath(meta.fullPath))
+        return false;
+
     return true;
+
+}
+
+function safeDecode(value) {
+
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+
+}
+
+function isStreamingPath(fullPath = "") {
+
+    const directories = safeDecode(fullPath)
+        .split("/")
+        .filter(Boolean)
+        .slice(0, -1)
+        .map(segment => segment.trim().toLowerCase());
+
+    return !directories.some(segment =>
+        /^tutorials?$/.test(segment) ||
+        /^software$/.test(segment) ||
+        /^(pdf|ebooks?|apps?)$/.test(segment) ||
+        /^games?$/.test(segment) ||
+        /^games\s+/.test(segment) ||
+        /^games?\s+(collection|\[?part)\b/.test(segment) ||
+        /\budemy\b/.test(segment) ||
+        /\bcoursera\b/.test(segment) ||
+        /\bskillshare\b/.test(segment) ||
+        /\blynda(?:\.com)?\b/.test(segment) ||
+        /\bfree\s*tutorials?\b/.test(segment)
+    );
 
 }
 
@@ -435,6 +474,8 @@ module.exports = {
     isTV,
 
     validate,
+
+    isStreamingPath,
 
     detectQuality,
 

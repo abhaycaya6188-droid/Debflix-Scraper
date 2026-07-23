@@ -1,0 +1,23 @@
+{
+  "server": "3",
+  "dryRun": false,
+  "existingEntries": 39337,
+  "previousSuccessfulAt": null,
+  "rootsChecked": 1,
+  "directoriesChecked": 12,
+  "unchangedDirectoriesSkipped": 0,
+  "timestampLessDirectoriesSkipped": 0,
+  "frontierDirectoriesQueued": 11,
+  "newDirectories": 0,
+  "changedDirectories": 0,
+  "newVideos": 0,
+  "rejectedVideos": 0,
+  "duplicateVideos": 1,
+  "dateBaselinesAdded": 45,
+  "nonStreamingDirectoriesSkipped": 3,
+  "failures": [],
+  "finalEntries": 39337,
+  "durationMs": 5483,
+  "finishedAt": "2026-07-17T03:53:33.702Z",
+  "safeToWrite": true
+}
