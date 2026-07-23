@@ -31,25 +31,41 @@ async function currentDomain() {
       signal: AbortSignal.timeout(8_000),
     });
     const domains = await response.json();
-    return String(domains.HDHUB4u || FALLBACK_DOMAIN).replace(/\/$/, "");
+    return String(domains.HDHUB4u || domains.HDHUB4U || FALLBACK_DOMAIN).replace(/\/$/, "");
   } catch {
     return FALLBACK_DOMAIN;
   }
+}
+
+function decodeHtml(value) {
+  return String(value || "")
+    .replace(/&amp;/gi, "&")
+    .replace(/&#x2f;|&#47;/gi, "/")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#039;|&apos;/gi, "'");
 }
 
 async function loadCatalogue() {
   if (catalogueCache && Date.now() < catalogueExpiresAt) return catalogueCache;
 
   const domain = await currentDomain();
-  const index = await fetchText(`${domain}/sitemap.xml`, domain + "/");
-  const listedUrls = [...index.matchAll(/<loc>([^<]+)<\/loc>/gi)]
-    .map(match => match[1].replace(/&amp;/g, "&"));
+  const candidates = [`${domain}/sitemap.xml`, `${domain}/sitemap_index.xml`];
+  let index = "";
 
+  for (const candidate of candidates) {
+    try {
+      index = await fetchText(candidate, domain + "/");
+      if (/<loc>/i.test(index)) break;
+    } catch {}
+  }
+
+  const listedUrls = [...index.matchAll(/<loc>([^<]+)<\/loc>/gi)]
+    .map(match => decodeHtml(match[1]));
   const sitemapUrls = listedUrls.filter(value => /sitemap/i.test(value));
   const directUrls = listedUrls.filter(value => !/sitemap/i.test(value));
 
   const maps = await Promise.all(
-    sitemapUrls.map(async sitemapUrl => {
+    sitemapUrls.slice(0, 20).map(async sitemapUrl => {
       try {
         return await fetchText(sitemapUrl, domain + "/");
       } catch {
@@ -58,13 +74,13 @@ async function loadCatalogue() {
     })
   );
 
-  catalogueCache = [
+  catalogueCache = [...new Set([
     ...directUrls,
     ...maps.flatMap(map =>
-      [...map.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match => match[1].replace(/&amp;/g, "&"))
+      [...map.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match => decodeHtml(match[1]))
     ),
-  ];
-  catalogueExpiresAt = Date.now() + 60 * 60 * 1000;
+  ])];
+  catalogueExpiresAt = Date.now() + 30 * 60 * 1000;
   return catalogueCache;
 }
 
@@ -78,32 +94,62 @@ function words(value) {
 }
 
 function scoreUrl(target, { title, year, type, season }) {
-  const slug = decodeURIComponent(new URL(target).pathname);
+  let slug = "";
+  try {
+    slug = decodeURIComponent(new URL(target).pathname).toLowerCase();
+  } catch {
+    return -10_000;
+  }
+
   const wanted = words(title);
   const found = new Set(words(slug));
-  let score = wanted.reduce((total, word) => total + (found.has(word) ? 15 : -20), 0);
+  let score = wanted.reduce((total, word) => total + (found.has(word) ? 20 : -25), 0);
 
-  if (year && found.has(String(year))) score += 35;
+  if (year && found.has(String(year))) score += 40;
   if (type === "tv" && season) {
-    const seasonNumber = Number(season);
+    const number = Number(season);
+    const padded = String(number).padStart(2, "0");
     if (
-      slug.includes(`season-${seasonNumber}`) ||
-      slug.includes(`season-${String(seasonNumber).padStart(2, "0")}`) ||
-      slug.includes(`s${String(seasonNumber).padStart(2, "0")}`)
-    ) score += 80;
-    else score -= 40;
-  } else if (slug.includes("full-movie")) {
+      slug.includes(`season-${number}`) ||
+      slug.includes(`season-${padded}`) ||
+      slug.includes(`season ${number}`) ||
+      slug.includes(`s${padded}`)
+    ) score += 90;
+  } else if (/full-movie|movie-download/.test(slug)) {
     score += 20;
   }
 
   return score;
 }
 
-async function findTitlePage(options) {
+async function searchFallback(domain, title) {
+  try {
+    const html = await fetchText(`${domain}/?s=${encodeURIComponent(title)}`, domain + "/");
+    return [...html.matchAll(/href=["']([^"']+)["']/gi)]
+      .map(match => decodeHtml(match[1]))
+      .map(value => {
+        try {
+          return new URL(value, domain).href;
+        } catch {
+          return "";
+        }
+      })
+      .filter(value => value.startsWith(domain));
+  } catch {
+    return [];
+  }
+}
+
+async function findTitlePages(options) {
+  const domain = await currentDomain();
   const catalogue = await loadCatalogue();
-  return catalogue
+  const searchUrls = await searchFallback(domain, options.title);
+
+  return [...new Set([...catalogue, ...searchUrls])]
     .map(target => ({ target, score: scoreUrl(target, options) }))
-    .sort((a, b) => b.score - a.score)[0];
+    .filter(item => item.score >= -20)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 12);
 }
 
 function decodeJavascriptString(raw) {
@@ -144,11 +190,13 @@ async function resolvePlayer(playerUrl) {
 
   const html = await fetchText(parsed.href, parsed.origin + "/");
   const unpacked = unpackPlayer(html) || html;
-  const urls = [...unpacked.matchAll(/(?:https?:\/\/|\/\/|\/)[^"'\s<>]+\.m3u8[^"'\s<>]*/gi)]
+  const normalized = decodeHtml(unpacked).replace(/\\\//g, "/");
+  const urls = [...normalized.matchAll(/(?:https?:\/\/|\/\/|\/)[^"'\s<>]+\.m3u8[^"'\s<>]*/gi)]
     .map(match => {
-      const raw = match[0].replace(/\\\//g, "/");
+      const raw = match[0];
       return new URL(raw.startsWith("//") ? `https:${raw}` : raw, parsed.origin).href;
     });
+
   const masters = [
     ...urls.filter(value => /master\.m3u8/i.test(value)),
     ...urls.filter(value => !/master\.m3u8/i.test(value)),
@@ -177,43 +225,76 @@ async function resolvePlayer(playerUrl) {
   throw new Error("No working HDStream4U playlist server");
 }
 
+function extractPlayers(page) {
+  const normalized = decodeHtml(page).replace(/\\\//g, "/");
+  return [...new Set(
+    [...normalized.matchAll(/(?:https?:)?\/\/hdstream4u\.com\/file\/[a-z0-9_-]+/gi)]
+      .map(result => result[0].startsWith("//") ? `https:${result[0]}` : result[0])
+  )];
+}
+
+function filterEpisodePlayers(page, players, episode) {
+  if (!episode || !players.length) return players;
+  const normalized = decodeHtml(page).replace(/\\\//g, "/");
+  const number = Number(episode);
+  const padded = String(number).padStart(2, "0");
+  const patterns = [
+    new RegExp(`(?:episode|ep)[\\s_:#-]*0?${number}(?:\\D|$)`, "i"),
+    new RegExp(`\\bE${padded}\\b`, "i"),
+  ];
+
+  const matched = players.filter(player => {
+    const index = normalized.indexOf(player);
+    if (index < 0) return false;
+    const context = normalized.slice(Math.max(0, index - 1800), index + player.length + 1800);
+    return patterns.some(pattern => pattern.test(context));
+  });
+  return matched.length ? matched : players;
+}
+
 async function getStreams({ title, year, type = "movie", season, episode, proxyBase }) {
   if (!title) return [];
-  const match = await findTitlePage({ title, year, type, season });
-  if (!match || match.score < 0) return [];
-
-  const page = await fetchText(match.target);
-  let players = [...page.matchAll(/(?:https?:)?\/\/hdstream4u\.com\/file\/[a-z0-9]+/gi)]
-    .map(result => result[0].startsWith("//") ? `https:${result[0]}` : result[0]);
-  players = [...new Set(players)];
-
-  if (type === "tv" && episode) {
-    const episodePattern = new RegExp(
-      `(?:episode|ep)[\\s_:-]*0?${Number(episode)}(?:\\D|$)[\\s\\S]{0,1200}?((?:https?:)?\\/\\/hdstream4u\\.com\\/file\\/[a-z0-9]+)`,
-      "ig"
-    );
-    const episodePlayers = [...page.matchAll(episodePattern)]
-      .map(result => result[1].startsWith("//") ? `https:${result[1]}` : result[1]);
-    if (episodePlayers.length) players = [...new Set(episodePlayers)];
-  }
+  const matches = await findTitlePages({ title, year, type, season });
+  if (!matches.length) return [];
 
   const streams = [];
-  for (const player of players.slice(0, 5)) {
+  const seenPlayers = new Set();
+
+  // Do not trust a single sitemap winner. Mirrors frequently contain several
+  // similarly named pages and only one still carries live player links.
+  for (const match of matches.slice(0, 8)) {
+    let page;
     try {
-      const playlist = await resolvePlayer(player);
-      streams.push({
-        name: "HDStream4U",
-        title: `${title}${type === "tv" ? ` S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}` : ""}`,
-        url: `${proxyBase}/api/hdstream4u-proxy/master.m3u8?url=${encodeURIComponent(playlist)}`,
-        quality: "Auto",
-        streamType: "M3U8",
-        provider: "HDStream4U",
-        source: "Premium Source 16",
-      });
-    } catch (error) {
-      console.error("HDStream4U player failed:", player, error.message);
+      page = await fetchText(match.target);
+    } catch {
+      continue;
+    }
+
+    let players = extractPlayers(page);
+    if (type === "tv") players = filterEpisodePlayers(page, players, episode);
+
+    for (const player of players.slice(0, 8)) {
+      if (seenPlayers.has(player)) continue;
+      seenPlayers.add(player);
+      try {
+        const playlist = await resolvePlayer(player);
+        streams.push({
+          name: "HDStream4U",
+          title: `${title}${type === "tv" ? ` S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}` : ""}`,
+          url: `${proxyBase}/api/hdstream4u-proxy/master.m3u8?url=${encodeURIComponent(playlist)}`,
+          quality: "Auto",
+          streamType: "M3U8",
+          provider: "HDStream4U",
+          source: "Premium Source 16",
+          pageUrl: match.target,
+        });
+        if (streams.length >= 3) return streams;
+      } catch (error) {
+        console.error("HDStream4U player failed:", player, error.message);
+      }
     }
   }
+
   return streams;
 }
 
