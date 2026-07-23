@@ -84,8 +84,8 @@ function decodeProxyHeaders(raw) {
   }
 }
 
-function makeProxyUrl(absoluteUrl, headers) {
-  let value = '/api?url=' + encodeURIComponent(absoluteUrl);
+function makeProxyUrl(proxyBase, absoluteUrl, headers) {
+  let value = `${proxyBase}/api?url=` + encodeURIComponent(absoluteUrl);
   if (headers && Object.keys(headers).length) {
     value += '&headers=' + encodeURIComponent(JSON.stringify(headers));
   }
@@ -116,10 +116,18 @@ function fetchUpstream(targetUrl, headers, range, redirects = 0) {
   });
 }
 
-function rewriteM3u8(body, playlistUrl, headers) {
+function preferEnglishAudio(line) {
+  if (!/^#EXT-X-MEDIA:TYPE=AUDIO/i.test(line)) return line;
+
+  const isEnglish = /(?:NAME|LANGUAGE)="English"/i.test(line);
+  const withoutDefault = line.replace(/,DEFAULT=(?:YES|NO)/i, '');
+  return `${withoutDefault},DEFAULT=${isEnglish ? 'YES' : 'NO'}`;
+}
+
+function rewriteM3u8(body, playlistUrl, headers, proxyBase) {
   const wrap = value => {
     try {
-      return makeProxyUrl(new URL(value, playlistUrl).href, headers);
+      return makeProxyUrl(proxyBase, new URL(value, playlistUrl).href, headers);
     } catch {
       return value;
     }
@@ -131,7 +139,9 @@ function rewriteM3u8(body, playlistUrl, headers) {
       const trimmed = line.trim();
       if (!trimmed) return line;
       if (!trimmed.startsWith('#')) return wrap(trimmed);
-      return line.replace(/URI=("([^"]+)"|'([^']+)')/g, (_match, quoted, double, single) => {
+
+      const preferred = preferEnglishAudio(line);
+      return preferred.replace(/URI=("([^"]+)"|'([^']+)')/g, (_match, quoted, double, single) => {
         const quote = quoted[0];
         return `URI=${quote}${wrap(double || single)}${quote}`;
       });
@@ -147,13 +157,14 @@ module.exports = async function handler(req, res) {
   const parsed = new URL(req.url, 'http://localhost');
   const q = Object.fromEntries(parsed.searchParams);
   const pathname = parsed.pathname;
+  const forwardedProtocol = String(req.headers['x-forwarded-proto'] || 'https').split(',', 1)[0].trim();
+  const proxyBase = `${forwardedProtocol}://${req.headers.host}`;
 
   if (pathname === '/api/multimovies' || pathname === '/api/multimovies-hls-proxy') {
-    const forwardedProtocol = String(req.headers['x-forwarded-proto'] || 'https').split(',', 1)[0].trim();
     return handleMultiMovies(req, res, pathname, q, {
       tmdbApiKey: MULTIMOVIES_TMDB_KEY,
       secret: MULTIMOVIES_PROXY_SECRET,
-      proxyBase: `${forwardedProtocol}://${req.headers.host}`,
+      proxyBase,
     });
   }
 
@@ -178,7 +189,7 @@ module.exports = async function handler(req, res) {
         res.removeHeader('Content-Length');
         res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
         res.setHeader('Cache-Control', 'no-store');
-        return res.end(rewriteM3u8(body, targetUrl, proxyHeaders));
+        return res.end(rewriteM3u8(body, targetUrl, proxyHeaders, proxyBase));
       }
 
       if (req.method === 'HEAD') return res.end();
