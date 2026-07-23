@@ -92,13 +92,32 @@ function makeProxyUrl(proxyBase, absoluteUrl, headers) {
   return value;
 }
 
+function isMovieBoxHost(targetUrl) {
+  try {
+    return /(^|\.)hakunaymatata\.com$/i.test(new URL(targetUrl).hostname);
+  } catch {
+    return false;
+  }
+}
+
 function fetchUpstream(targetUrl, headers, range, redirects = 0) {
   return new Promise((resolve, reject) => {
     if (redirects > 5) return reject(new Error('too many redirects'));
+
+    const cleanHeaders = { ...headers };
+    // Some MovieBox CDN edges return an HTML/error body with HTTP 200 when an
+    // Origin header is present. Signed resource URLs only need the downloader
+    // referer and browser UA.
+    if (isMovieBoxHost(targetUrl)) {
+      delete cleanHeaders.Origin;
+      delete cleanHeaders.origin;
+    }
+
     const requestHeaders = {
-      'User-Agent': headers['User-Agent'] || headers['user-agent'] || UA,
-      Accept: headers.Accept || headers.accept || '*/*',
-      ...headers,
+      'User-Agent': cleanHeaders['User-Agent'] || cleanHeaders['user-agent'] || UA,
+      Accept: cleanHeaders.Accept || cleanHeaders.accept || '*/*',
+      'Accept-Encoding': 'identity',
+      ...cleanHeaders,
     };
     if (range) requestHeaders.Range = range;
 
@@ -107,7 +126,7 @@ function fetchUpstream(targetUrl, headers, range, redirects = 0) {
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         const location = new URL(response.headers.location, targetUrl).href;
         response.resume();
-        return resolve(fetchUpstream(location, headers, range, redirects + 1));
+        return resolve(fetchUpstream(location, cleanHeaders, range, redirects + 1));
       }
       resolve(response);
     });
@@ -118,7 +137,6 @@ function fetchUpstream(targetUrl, headers, range, redirects = 0) {
 
 function preferEnglishAudio(line) {
   if (!/^#EXT-X-MEDIA:TYPE=AUDIO/i.test(line)) return line;
-
   const isEnglish = /(?:NAME|LANGUAGE)="English"/i.test(line);
   const withoutDefault = line.replace(/,DEFAULT=(?:YES|NO)/i, '');
   return `${withoutDefault},DEFAULT=${isEnglish ? 'YES' : 'NO'}`;
@@ -149,6 +167,18 @@ function rewriteM3u8(body, playlistUrl, headers, proxyBase) {
     .join('\n');
 }
 
+async function readPreview(stream, limit = 512) {
+  const chunks = [];
+  let received = 0;
+  for await (const chunk of stream) {
+    const buffer = Buffer.from(chunk);
+    chunks.push(buffer);
+    received += buffer.length;
+    if (received >= limit) break;
+  }
+  return Buffer.concat(chunks).subarray(0, limit);
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
@@ -169,17 +199,47 @@ module.exports = async function handler(req, res) {
   }
 
   if (q.url) {
-    const targetUrl = decodeURIComponent(q.url);
+    // URLSearchParams has already decoded the parameter. Decoding it again can
+    // corrupt signed CDN URLs containing percent escapes.
+    const targetUrl = String(q.url);
     const proxyHeaders = decodeProxyHeaders(q.headers);
     const range = req.headers.range || '';
+
     try {
       const upstream = await fetchUpstream(targetUrl, proxyHeaders, range);
-      const contentType = String(upstream.headers['content-type'] || '').toLowerCase();
+      let contentType = String(upstream.headers['content-type'] || '').toLowerCase();
       const isM3u8 = contentType.includes('mpegurl') || /\.m3u8(?:\?|$)/i.test(targetUrl);
+      const isMp4 = /\.mp4(?:\?|$)/i.test(targetUrl);
+
+      // Do not forward provider error pages as successful video responses. That
+      // was surfacing in Chromium as MEDIA_ELEMENT_ERROR code 4.
+      if (
+        !isM3u8 &&
+        (contentType.includes('text/html') || contentType.includes('application/json') || contentType.includes('text/plain'))
+      ) {
+        const preview = (await readPreview(upstream)).toString('utf8');
+        res.statusCode = 502;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({
+          error: 'remote media proxy received non-media response',
+          upstreamStatus: upstream.statusCode,
+          contentType,
+          preview: preview.slice(0, 300),
+        }));
+      }
 
       res.statusCode = upstream.statusCode || 502;
-      for (const name of ['accept-ranges', 'cache-control', 'content-disposition', 'content-length', 'content-range', 'content-type', 'etag', 'last-modified']) {
+      for (const name of ['accept-ranges', 'cache-control', 'content-length', 'content-range', 'content-type', 'etag', 'last-modified']) {
         if (upstream.headers[name]) res.setHeader(name, upstream.headers[name]);
+      }
+
+      if (isMp4 && (!contentType || contentType === 'application/octet-stream')) {
+        contentType = 'video/mp4';
+        res.setHeader('Content-Type', 'video/mp4');
+      }
+      if (isMp4) {
+        res.setHeader('Accept-Ranges', upstream.headers['accept-ranges'] || 'bytes');
+        res.setHeader('Cache-Control', 'private, no-store');
       }
 
       if (isM3u8 && req.method !== 'HEAD') {
