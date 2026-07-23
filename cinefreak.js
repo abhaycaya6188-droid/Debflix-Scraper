@@ -1,12 +1,14 @@
 const cinecloud = require("./cinecloud");
 const cheerio = require("cheerio");
 
-const BASE = "https://cinefreak.nl";
+// CineFreak moved its active search and content site from .nl to .net.
+// The former host intermittently resets Oracle connections, which made
+// Premium Source 11 disappear before resolution even started.
+const BASE = "https://cinefreak.net";
 
 const HEADERS = {
     "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36",
-    Cookie: "xla=s4t",
 };
 
 async function search(title) {
@@ -270,10 +272,13 @@ async function resolve(slug) {
 
             let s = 0;
 
-            if (r.quality === "2160p") s += 400;
-            else if (r.quality === "1080p") s += 300;
-            else if (r.quality === "720p") s += 200;
-            else if (r.quality === "480p") s += 100;
+            // CineCloud must generate the file before returning it. Huge 4K
+            // releases frequently time out or overload the origin, so use a
+            // web-friendly default and keep 4K in the manual quality list.
+            if (r.quality === "1080p") s += 500;
+            else if (r.quality === "720p") s += 400;
+            else if (r.quality === "480p") s += 300;
+            else if (r.quality === "2160p") s += 100;
 
             if (r.codec === "HEVC") s += 50;
             if (r.codec === "HDR") s += 40;

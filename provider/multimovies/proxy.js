@@ -1,4 +1,3 @@
-
 "use strict";
 
 const crypto = require("crypto");
@@ -171,22 +170,11 @@ function makeProxyUrl(base, target, referer, secret) {
   );
 }
 
-function rewritePlaylist(
-  body,
-  playlistUrl,
-  referer,
-  proxyBase,
-  secret
-) {
+function rewritePlaylist(body, playlistUrl, referer, proxyBase, secret) {
   const wrap = value => {
     const absoluteUrl = new URL(value, playlistUrl).href;
 
-    return makeProxyUrl(
-      proxyBase,
-      absoluteUrl,
-      referer,
-      secret
-    );
+    return makeProxyUrl(proxyBase, absoluteUrl, referer, secret);
   };
 
   return String(body)
@@ -300,11 +288,7 @@ async function handleProxy(req, res, query, options) {
   let finalUrl;
 
   try {
-    const result = await fetchValidatedTarget(
-      target,
-      referer,
-      headers
-    );
+    const result = await fetchValidatedTarget(target, referer, headers);
 
     upstream = result.response;
     finalUrl = result.finalUrl;
@@ -341,28 +325,17 @@ async function handleProxy(req, res, query, options) {
     const body = await upstream.text();
 
     res.removeHeader("content-length");
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.apple.mpegurl"
-    );
+    res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
     res.setHeader("Cache-Control", "no-store");
 
     return res.end(
-      rewritePlaylist(
-        body,
-        finalUrl,
-        referer,
-        proxyBase,
-        secret
-      )
+      rewritePlaylist(body, finalUrl, referer, proxyBase, secret)
     );
   }
 
   res.setHeader(
     "Cache-Control",
-    upstream.ok
-      ? "public, max-age=3600"
-      : "no-store"
+    upstream.ok ? "public, max-age=3600" : "no-store"
   );
 
   if (!upstream.body) {

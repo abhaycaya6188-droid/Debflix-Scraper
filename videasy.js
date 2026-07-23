@@ -14,6 +14,22 @@ const VIDEASY_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9"
 };
 
+// The seed service currently challenges Railway requests using Videasy's
+// macOS fingerprint, while the same public API accepts VidKing's browser
+// fingerprint. This affects seed acquisition only; playback retains Videasy's
+// required Origin and Referer above.
+const VIDEASY_SEED_HEADERS = {
+    Origin: "https://www.vidking.net",
+    Referer: "https://www.vidking.net/",
+    "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/149.0.0.0 Safari/537.36",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0"
+};
+
 function doubleEncodeTitle(title) {
     return encodeURIComponent(
         encodeURIComponent(title || "")
@@ -21,38 +37,52 @@ function doubleEncodeTitle(title) {
 }
 
 async function getSeed(tmdbId) {
-    const url =
-        `${VIDEASY_API}/seed?mediaId=` +
-        encodeURIComponent(tmdbId);
+    let lastStatus = 0;
+    let lastBody = "";
 
-    const res = await fetch(url, {
-        headers: VIDEASY_HEADERS
-    });
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        const url =
+            `${VIDEASY_API}/seed?mediaId=` +
+            encodeURIComponent(tmdbId) +
+            `&_t=${Date.now()}`;
 
-    const body = await res.text();
+        const res = await fetch(url, {
+            headers: VIDEASY_SEED_HEADERS,
+            signal: AbortSignal.timeout(3500)
+        });
 
-    if (!res.ok) {
-        throw new Error(
-            `Videasy seed HTTP ${res.status}: ` +
-            body.slice(0, 300)
+        const body = await res.text();
+        lastStatus = res.status;
+        lastBody = body;
+
+        if (res.ok) {
+            let json;
+
+            try {
+                json = JSON.parse(body);
+            } catch {
+                throw new Error(
+                    "Videasy seed response was not JSON"
+                );
+            }
+
+            if (!json.seed) {
+                throw new Error("Videasy seed missing");
+            }
+
+            return String(json.seed);
+        }
+
+        if (res.status !== 403 && res.status !== 429) break;
+        await new Promise(resolve =>
+            setTimeout(resolve, attempt * 350)
         );
     }
 
-    let json;
-
-    try {
-        json = JSON.parse(body);
-    } catch {
-        throw new Error(
-            "Videasy seed response was not JSON"
-        );
-    }
-
-    if (!json.seed) {
-        throw new Error("Videasy seed missing");
-    }
-
-    return String(json.seed);
+    throw new Error(
+        `Videasy seed HTTP ${lastStatus}: ` +
+        lastBody.slice(0, 300)
+    );
 }
 
 async function decryptVideasyPayload(
@@ -151,7 +181,8 @@ async function getVideasySources(query) {
             `?title=${encodedTitle}&${params.toString()}`;
 
         const sourceRes = await fetch(url, {
-            headers: VIDEASY_HEADERS
+            headers: VIDEASY_HEADERS,
+            signal: AbortSignal.timeout(6000)
         });
 
         const encryptedBody =
@@ -230,6 +261,7 @@ async function getVideasySources(query) {
                 streamType: "M3U8",
                 codec: "HLS",
                 language: "Multi",
+                proxyHeaders: VIDEASY_HEADERS,
                 subtitles
             }));
 

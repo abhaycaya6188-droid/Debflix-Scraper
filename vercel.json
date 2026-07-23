@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/multimovies", "destination": "/api/multimovies.js" },
+    { "source": "/api/multimovies-hls-proxy", "destination": "/api/multimovies.js" },
     { "source": "/api", "destination": "/api/index.js" },
     { "source": "/api/(.*)", "destination": "/api/index.js" }
   ]

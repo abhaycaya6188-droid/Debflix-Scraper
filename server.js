@@ -17,6 +17,9 @@ const cinefreak = require("./cinefreak");
 const cinecloud = require("./cinecloud");
 const cinemm = require("./cinemm");
 const fourKhdhub = require("./4khdhub");
+const hdstream4u = require("./hdstream4u");
+const { handleMultiMovies } = require("./provider/multimovies/handler");
+const { handleMoviesMod } = require("./provider/moviesmod/handler");
 const ctg = require("./provider/ctg/engine");
 const ctg2 = require("./provider/ctg/engine2");
 const ctg3 = require("./provider/ctg/engine3");
@@ -25,6 +28,7 @@ const ctg5 = require("./provider/ctg/engine5");
 const movixV2 =
   require("./movix-v2");
 const moviebox = require("./moviebox");
+const { handleHDGharTV } = require("./provider/hdghartv/handler");
 const NET_VERIFY = "https://net77.cc";
 const NET_MAIN = "https://net77.cc";
 
@@ -33,6 +37,14 @@ const port = process.env.PORT || 3000;
 
 
 const crypto = require("crypto");
+const multimoviesSecretSeed =
+  process.env.MULTIMOVIES_PROXY_SECRET ||
+  process.env.RAILWAY_PROJECT_ID ||
+  process.env.RAILWAY_SERVICE_ID;
+const multimoviesProxySecret =
+  multimoviesSecretSeed
+    ? crypto.createHash("sha256").update(`${multimoviesSecretSeed}:multimovies-proxy-v1`).digest("hex")
+    : crypto.randomBytes(32).toString("hex");
 let netmirrorCookie = "";
 let netmirrorCookieTime = 0;
 
@@ -108,6 +120,14 @@ const VIDKING_PROXY_PATH =
 
 const VIDKING_ALLOWED_HOSTS = [
   "ironbubble.site",
+  "ironwallnet.net",
+  "randomseg01.site",
+  "checknews02.site",
+  "cartlegion03.site",
+  "lookcrew11.site",
+  "diskphone12.site",
+  "sandstorm13.site",
+  "losangeles14.site",
 ];
 
 function isAllowedVidKingHost(hostname) {
@@ -198,10 +218,10 @@ function getVidKingDefaultHeaders(targetUrl) {
     Accept: "*/*",
 
     Referer:
-      "https://www.vidking.net/",
+      "https://player.videasy.to/",
 
     Origin:
-      "https://www.vidking.net",
+      "https://player.videasy.to",
 
     "Sec-Fetch-Dest":
       "empty",
@@ -366,6 +386,132 @@ if (req.method === "OPTIONS") {
     const parsed = url.parse(req.url, true);
 const pathname = parsed.pathname;
 const query = parsed.query;
+
+if (
+  pathname === "/api/multimovies" ||
+  pathname === "/api/multimovies-hls-proxy"
+) {
+  const forwardedProtocol = String(req.headers["x-forwarded-proto"] || "https")
+    .split(",", 1)[0]
+    .trim();
+  return handleMultiMovies(req, res, pathname, query, {
+    tmdbApiKey: TMDB_API_KEY,
+    secret: multimoviesProxySecret,
+    proxyBase: `${forwardedProtocol}://${req.headers.host || "oracle.debflicks.com"}`,
+  });
+}
+
+if (
+  pathname === "/api/moviesmod" ||
+  pathname === "/api/moviesmod-diagnostic"
+) {
+  return handleMoviesMod(req, res, pathname, query, {
+    tmdbApiKey: TMDB_API_KEY,
+  });
+}
+
+if (pathname === "/api/hdghartv") {
+    return handleHDGharTV(req, res);
+}
+
+if (pathname === "/api/tmdb-home") {
+  const categories = {
+    trendingMovies: "trending/movie/week",
+    popularMovies: "movie/popular",
+    nowPlaying: "movie/now_playing",
+    upcoming: "movie/upcoming",
+    topRatedMovies: "movie/top_rated",
+    trendingTv: "trending/tv/week",
+    popularTv: "tv/popular",
+    topRatedTv: "tv/top_rated",
+    airingToday: "tv/airing_today",
+    onTheAir: "tv/on_the_air",
+  };
+
+  const entries = await Promise.all(
+    Object.entries(categories).map(async ([name, path]) => {
+      try {
+        const target = `https://api.themoviedb.org/3/${path}?api_key=${TMDB_API_KEY}`;
+        const response = await fetch(target, { signal: AbortSignal.timeout(10000) });
+        const data = response.ok ? await response.json() : { results: [] };
+        return [name, data.results || []];
+      } catch {
+        return [name, []];
+      }
+    })
+  );
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=3600");
+  const home = Object.fromEntries(entries);
+  home.trendingMovies = home.trendingMovies.length
+    ? home.trendingMovies
+    : (home.nowPlaying.length ? home.nowPlaying : home.topRatedMovies);
+  home.popularMovies = home.popularMovies.length
+    ? home.popularMovies
+    : home.topRatedMovies;
+  home.upcoming = home.upcoming.length
+    ? home.upcoming
+    : home.nowPlaying;
+  home.trendingTv = home.trendingTv.length
+    ? home.trendingTv
+    : (home.popularTv.length ? home.popularTv : home.airingToday);
+  home.topRatedTv = home.topRatedTv.length
+    ? home.topRatedTv
+    : home.popularTv;
+  home.onTheAir = home.onTheAir.length
+    ? home.onTheAir
+    : home.airingToday;
+  return res.end(JSON.stringify(home));
+}
+
+if (pathname === "/api/tmdb-details") {
+  try {
+    const type = query.type === "tv" ? "tv" : query.type === "movie" ? "movie" : "";
+    const id = String(query.id || "");
+    const season = String(query.season || "");
+    const providers = query.providers === "1";
+
+    if (!type || !/^\d+$/.test(id) || (season && !/^\d+$/.test(season))) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ error: "Invalid details request" }));
+    }
+
+    let path;
+    if (season) {
+      if (type !== "tv") throw new Error("Seasons are TV-only");
+      path = `tv/${id}/season/${season}`;
+    } else if (providers) {
+      path = `${type}/${id}/watch/providers`;
+    } else {
+      path = `${type}/${id}`;
+    }
+
+    const target = new URL(`https://api.themoviedb.org/3/${path}`);
+    target.searchParams.set("api_key", TMDB_API_KEY);
+    if (!season && !providers) {
+      target.searchParams.set(
+        "append_to_response",
+        type === "movie"
+          ? "credits,videos,similar,recommendations,release_dates,images,external_ids"
+          : "credits,videos,similar,recommendations,content_ratings,images,external_ids"
+      );
+    }
+
+    const upstream = await fetch(target, { signal: AbortSignal.timeout(12000) });
+    const body = await upstream.text();
+    res.statusCode = upstream.status;
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=3600");
+    return res.end(body);
+  } catch (error) {
+    res.statusCode = 502;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ error: "Details relay failed", detail: String(error) }));
+  }
+}
 
 function normalizeTitle(str = "") {
     return str
@@ -1101,12 +1247,37 @@ if (pathname === "/api/cinefreak") {
       }));
     }
 
-    // TMDB lookup
-    const tmdbRes = await fetch(
-      `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`
-    );
+    const suppliedTitle = String(query.title || "").trim();
+    const suppliedYear = String(query.year || "").match(/\b(19|20)\d{2}\b/)?.[0] || "";
 
-    const movie = await tmdbRes.json();
+    // The caller already has metadata. Prefer it so a transient TMDB reset
+    // cannot make an otherwise healthy CineFreak result disappear.
+    let movie;
+
+    if (suppliedTitle) {
+      movie = type === "tv"
+        ? {
+            name: suppliedTitle,
+            original_name: suppliedTitle,
+            first_air_date: suppliedYear ? `${suppliedYear}-01-01` : ""
+          }
+        : {
+            title: suppliedTitle,
+            original_title: suppliedTitle,
+            release_date: suppliedYear ? `${suppliedYear}-01-01` : ""
+          };
+    } else {
+      const tmdbRes = await fetch(
+        `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+
+      if (!tmdbRes.ok) {
+        throw new Error(`TMDB HTTP ${tmdbRes.status}`);
+      }
+
+      movie = await tmdbRes.json();
+    }
 
     const title =
       type === "tv"
@@ -1311,13 +1482,38 @@ const result =
     const result =
       await getVideasySources(query);
 
+    // Android's source list only needs playback metadata. Videasy may attach
+    // hundreds of subtitle objects to every quality and repeat the same list
+    // again at the response root. Besides wasting heap, those objects do not
+    // match the mobile DTO's string subtitle field and make Gson reject the
+    // complete provider response. Keep this endpoint small and deterministic.
+    const mobileStreams =
+      Array.isArray(result.streams)
+        ? result.streams.map(stream => {
+            const {
+              subtitles,
+              ...playbackStream
+            } = stream;
+            return playbackStream;
+          })
+        : [];
+
+    const mobileResult = {
+      success: result.success,
+      provider: result.provider,
+      server: result.server,
+      tmdbId: result.tmdbId,
+      streams: mobileStreams,
+      error: result.error,
+    };
+
     res.setHeader(
       "Content-Type",
       "application/json"
     );
 
     return res.end(
-      JSON.stringify(result)
+      JSON.stringify(mobileResult)
     );
 
   } catch (e) {
@@ -1621,8 +1817,45 @@ if (
     }
 
     if (isPlaylist) {
+      const maxPlaylistBytes =
+        2 * 1024 * 1024;
+
+      if (
+        Number(contentLength || 0) >
+        maxPlaylistBytes
+      ) {
+        await upstream.body?.cancel();
+        res.statusCode = 502;
+        return res.end("VidKing playlist exceeds safety limit");
+      }
+
+      const reader =
+        upstream.body?.getReader();
+      const chunks = [];
+      let received = 0;
+
+      if (!reader) {
+        res.statusCode = 502;
+        return res.end("VidKing playlist body missing");
+      }
+
+      while (true) {
+        const { done, value } =
+          await reader.read();
+        if (done) break;
+
+        received += value.byteLength;
+        if (received > maxPlaylistBytes) {
+          await reader.cancel();
+          res.statusCode = 502;
+          return res.end("VidKing playlist exceeds safety limit");
+        }
+        chunks.push(Buffer.from(value));
+      }
+
       const playlist =
-        await upstream.text();
+        Buffer.concat(chunks, received)
+          .toString("utf8");
 
       if (
         !playlist
@@ -1743,6 +1976,82 @@ if (
   }
 }
 
+if (pathname === "/api/movix-vidmoly-resolve") {
+  try {
+    const embedUrl = String(query.url || "");
+    const parsedEmbed = new URL(embedUrl);
+    const embedHost = parsedEmbed.hostname.toLowerCase();
+
+    if (!/(^|\.)vidmoly\.(biz|me)$/.test(embedHost)) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ success: false, error: "Unsupported Vidmoly URL" }));
+    }
+
+    const userAgent =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36";
+    const embedResponse = await fetch(parsedEmbed.href, {
+      headers: {
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Referer: "https://movix.cash/",
+        "User-Agent": userAgent,
+      },
+      redirect: "follow",
+    });
+    const html = await embedResponse.text();
+    const patterns = [
+      /sources\s*:\s*\[\s*\{\s*file\s*:\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i,
+      /file\s*:\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i,
+      /["'](https?:\/\/[^"'\\\s]+\.m3u8[^"'\\\s]*)["']/i,
+    ];
+    let streamUrl = "";
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        streamUrl = match[1]
+          .replace(/&amp;/g, "&")
+          .replace(/&#x2F;/gi, "/")
+          .replace(/&#47;/g, "/")
+          .replace(/\\\//g, "/");
+        break;
+      }
+    }
+
+    if (!embedResponse.ok || !streamUrl) {
+      res.statusCode = 502;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({
+        success: false,
+        error: !embedResponse.ok
+          ? `Vidmoly page HTTP ${embedResponse.status}`
+          : "No Vidmoly HLS stream found",
+      }));
+    }
+
+    const proxyBase = "https://debflix-scraper-production.up.railway.app";
+    const playableUrl =
+      `${proxyBase}/api/movix-hls-proxy?url=${encodeURIComponent(streamUrl)}` +
+      `&referer=${encodeURIComponent(parsedEmbed.origin + "/")}`;
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "no-store");
+    return res.end(JSON.stringify({
+      success: true,
+      stream: {
+        url: playableUrl,
+        streamType: "M3U8",
+        host: new URL(streamUrl).hostname,
+        referer: parsedEmbed.origin + "/",
+      },
+    }));
+  } catch (e) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ success: false, error: e.message || String(e) }));
+  }
+}
+
 if (pathname === "/api/movix-hls-proxy") {
 
   try {
@@ -1810,6 +2119,8 @@ if (pathname === "/api/movix-hls-proxy") {
     const allowedHosts = [
       "finepulfe.xyz",
       "vmeas.cloud",
+      "vmwesa.online",
+      "vmwesa.com",
     ];
 
     const allowed =
@@ -1844,10 +2155,7 @@ if (pathname === "/api/movix-hls-proxy") {
       Accept: "*/*",
 
       Referer:
-        "https://cinestream.info/",
-
-      Origin:
-        "https://cinestream.info",
+        String(query.referer || "https://cinestream.info/"),
     };
 
     /*
@@ -1924,7 +2232,7 @@ if (pathname === "/api/movix-hls-proxy") {
       mediaUrl =>
         `${proxyBase}/api/movix-hls-proxy?url=${encodeURIComponent(
           mediaUrl
-        )}`;
+        )}&referer=${encodeURIComponent(requestHeaders.Referer)}`;
 
     if (isPlaylist) {
 
@@ -2237,6 +2545,147 @@ if (
 
 
 
+if (pathname === "/api/hdstream4u") {
+  res.setHeader("Content-Type", "application/json");
+
+  try {
+    const id = String(query.id || "");
+    const type = query.type === "tv" ? "tv" : "movie";
+    if (!/^\d+$/.test(id)) {
+      res.statusCode = 400;
+      return res.end(JSON.stringify({ success: false, streams: [], error: "Invalid TMDB id" }));
+    }
+
+    let title = String(query.title || "").trim();
+    let year = String(query.year || "").trim();
+    if (!title) {
+      const tmdbResponse = await fetch(
+        `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`,
+        { signal: AbortSignal.timeout(12_000) }
+      );
+      if (!tmdbResponse.ok) throw new Error(`TMDB returned ${tmdbResponse.status}`);
+      const media = await tmdbResponse.json();
+      title = type === "tv" ? media.name : media.title;
+      const date = type === "tv" ? media.first_air_date : media.release_date;
+      year = String(date || "").slice(0, 4);
+    }
+    const proxyBase = `https://${req.headers.host || "oracle.debflicks.com"}`;
+    const streams = await hdstream4u.getStreams({
+      title,
+      year,
+      type,
+      season: query.season,
+      episode: query.episode,
+      proxyBase,
+    });
+
+    return res.end(JSON.stringify({ success: true, provider: "HDStream4U", streams }));
+  } catch (error) {
+    console.error("HDSTREAM4U ERROR:", error);
+    res.statusCode = 502;
+    return res.end(JSON.stringify({
+      success: false,
+      provider: "HDStream4U",
+      streams: [],
+      error: error?.message || String(error),
+    }));
+  }
+}
+
+if (pathname.startsWith("/api/hdstream4u-proxy")) {
+  try {
+    const target = new URL(String(query.url || ""));
+    const isKnownProviderHost =
+      /(^|\.)(hdstream4u\.com|acek-cdn\.com|dramiyos-cdn\.com)$/i.test(target.hostname);
+    const isSignedSegmentHost =
+      /^p\d+-ad-site-sign-[a-z0-9-]+\.tiktokcdn\.com$/i.test(target.hostname);
+    if (!isKnownProviderHost && !isSignedSegmentHost) {
+      res.statusCode = 403;
+      return res.end("Unsupported HDStream4U host");
+    }
+
+    const upstream = await fetch(target, {
+      headers: {
+        Accept: "*/*",
+        Origin: "https://hdstream4u.com",
+        Referer: "https://hdstream4u.com/",
+        "User-Agent": hdstream4u.USER_AGENT,
+      },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!upstream.ok) {
+      res.statusCode = upstream.status;
+      return res.end(`HDStream4U upstream returned ${upstream.status}`);
+    }
+
+    const isPlaylist = target.pathname.toLowerCase().endsWith(".m3u8");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", isPlaylist ? "no-store" : "public, max-age=3600");
+
+    if (isPlaylist) {
+      const body = Buffer.from(await upstream.arrayBuffer());
+      const proxyBase = `https://${req.headers.host || "oracle.debflicks.com"}`;
+      const makeProxyUrl = absolute => {
+        const extension = new URL(absolute).pathname.match(/\.(m3u8|ts|aac|vtt|key)$/i)?.[0] || ".bin";
+        return `${proxyBase}/api/hdstream4u-proxy/media${extension}?url=${encodeURIComponent(absolute)}`;
+      };
+      const rewritten = body.toString("utf8").split(/\r?\n/).map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return line;
+        if (trimmed.startsWith("#")) {
+          return line.replace(/URI="([^"]+)"/gi, (_, uri) => {
+            const absolute = new URL(uri, target).href;
+            return `URI="${makeProxyUrl(absolute)}"`;
+          });
+        }
+        const absolute = new URL(trimmed, target).href;
+        return makeProxyUrl(absolute);
+      }).join("\n");
+      res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+      return res.end(rewritten);
+    }
+
+    // The provider prefixes MPEG-TS segments with a complete 1x1 PNG. Strip
+    // that tiny prefix, then stream each segment immediately. Buffering the
+    // complete 2-5 MB segment here caused 30-60 second player startup delays.
+    const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const reader = upstream.body?.getReader();
+    if (!reader) throw new Error("HDStream4U returned no media body");
+
+    let prefix = Buffer.alloc(0);
+    let prefixHandled = false;
+    res.setHeader("Content-Type", "video/mp2t");
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      let chunk = Buffer.from(value);
+
+      if (!prefixHandled) {
+        prefix = Buffer.concat([prefix, chunk]);
+        if (prefix.length < 8) continue;
+
+        if (prefix.subarray(0, 8).equals(pngSignature)) {
+          const iend = prefix.indexOf(Buffer.from("IEND"));
+          if (iend < 0) continue;
+          chunk = prefix.subarray(iend + 8);
+        } else {
+          chunk = prefix;
+        }
+        prefix = Buffer.alloc(0);
+        prefixHandled = true;
+      }
+
+      if (chunk.length) res.write(chunk);
+    }
+    return res.end();
+  } catch (error) {
+    console.error("HDSTREAM4U PROXY ERROR:", error);
+    res.statusCode = 502;
+    return res.end("HDStream4U proxy failed");
+  }
+}
+
 if (pathname === "/api/hls-proxy") {
 
   try {
@@ -2538,7 +2987,19 @@ if (pathname === "/api/vidking") {
           provider: "VidKing",
           quality: source.quality || "Auto",
 
-          url: source.url,
+          // The CDN rejects direct phone requests even with the correct
+          // Referer/Origin. Keep playlist, child-playlist, key and segment
+          // requests on the bounded allowlisted proxy instead.
+          url:
+            "https://debflix-scraper-production.up.railway.app" +
+            makeVidKingProxyUrl(
+              source.url,
+              getVidKingDefaultHeaders(source.url)
+            ),
+
+          // These are required by ironbubble for both the master playlist and
+          // its child playlists/segments. Android forwards proxyHeaders to MPV.
+          proxyHeaders: getVidKingDefaultHeaders(source.url),
 
           type: "hls"
 

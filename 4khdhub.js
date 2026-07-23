@@ -107,14 +107,30 @@ function isUsefulLink(url) {
   );
 }
 
+function isDirectMedia(url = "") {
+  try {
+    return /\.(?:m3u8|mp4|mkv|webm|avi|mov)$/i.test(
+      new URL(url).pathname
+    );
+  } catch {
+    return false;
+  }
+}
+
+function extractAllLinks(html, pageUrl) {
+  const $ = cheerio.load(html);
+  const urls = [];
+
+  $("a[href]").each((_, element) => {
+    const url = absolute($(element).attr("href"), pageUrl);
+    if (url) urls.push(url);
+  });
+
+  return [...new Set(urls)];
+}
+
 function scoreResult(item, title, year) {
   const target = normalizeTitle(title);
-
-resolved = resolved.filter(link => {
-    const rel = normalizeTitle(link.release || "");
-
-    return rel.includes(target);
-});
   const found = normalizeTitle(item.title);
   let score = 0;
 
@@ -144,6 +160,7 @@ async function fetchHtml(url) {
       Referer: BASE + "/",
     },
     redirect: "follow",
+    signal: AbortSignal.timeout(12000),
   });
 
   return {
@@ -330,29 +347,54 @@ function extractLinks(html, pageUrl) {
   return links;
 }
 async function resolveLink(link) {
-  if (isUsefulLink(link.url)) {
-    return [link];
+  const queue = [link.url];
+  const visited = new Set();
+
+  while (queue.length && visited.size < 8) {
+    const url = queue.shift();
+    if (!url || visited.has(url)) continue;
+    visited.add(url);
+
+    if (isDirectMedia(url)) {
+      return [{
+        ...link,
+        url,
+        proxyHeaders: {
+          Referer: new URL(url).origin + "/",
+          "User-Agent": HEADERS["User-Agent"],
+        },
+      }];
+    }
+
+    try {
+      const page = await fetchHtml(url);
+      if (!page.ok) continue;
+
+      for (const next of extractAllLinks(page.html, page.url)) {
+        if (isDirectMedia(next)) {
+          return [{
+            ...link,
+            url: next,
+            proxyHeaders: {
+              Referer: page.url,
+              "User-Agent": HEADERS["User-Agent"],
+            },
+          }];
+        }
+
+        if (
+          /hubcloud|hubdrive|gamerxyt|filepress|pixeldrain/i.test(next) &&
+          !visited.has(next)
+        ) {
+          queue.push(next);
+        }
+      }
+    } catch {
+      // A dead mirror must not prevent the remaining mirrors from resolving.
+    }
   }
 
-  if (!link.url.startsWith(BASE)) {
-    return [];
-  }
-
-  try {
-    const page = await fetchHtml(link.url);
-
-    if (!page.ok)
-      return [];
-
-    return extractLinks(
-      page.html,
-      page.url
-    ).filter(next =>
-      isUsefulLink(next.url)
-    );
-  } catch {
-    return [];
-  }
+  return [];
 }
 
 async function getStreams({
@@ -387,6 +429,12 @@ async function getStreams({
 
   let links =
     extractLinks(page.html, page.url);
+
+  const titleMatches = links.filter(link =>
+    normalizeTitle(link.release || link.context || "")
+      .includes(normalizeTitle(title))
+  );
+  if (titleMatches.length) links = titleMatches;
 
   if (type === "tv" && season) {
   const requestedSeason =
@@ -435,23 +483,11 @@ async function getStreams({
       }));
   }
 }
-  const resolved = [];
-
-  for (const link of links.slice(0, 20)) {
-  const next =
-    await resolveLink(link);
-
-  if (next.length) {
-    resolved.push(...next);
-    continue;
-  }
-
-  // Keep only useful external links.
-  // Never return unresolved 4KHDHub navigation/category pages.
-  if (isUsefulLink(link.url)) {
-    resolved.push(link);
-  }
-}
+  const resolved = (
+    await Promise.all(
+      links.slice(0, 20).map(resolveLink)
+    )
+  ).flat();
 
   const seen = new Set();
 
@@ -526,8 +562,11 @@ episode:
 seasonPack:
   link.seasonPack === true,
 
-release:
+    release:
   link.release || link.context || "",
+
+proxyHeaders:
+  link.proxyHeaders,
 
 index,
   };
