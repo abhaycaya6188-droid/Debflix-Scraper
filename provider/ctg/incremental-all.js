@@ -94,6 +94,10 @@ async function updateServer(server) {
         CACHE_DIR,
         `incremental-stats${server.suffix}.json`
     );
+    const addedFile = path.join(
+        CACHE_DIR,
+        `incremental-added${server.suffix}.json`
+    );
     const previousStats = readJson(statsFile, {});
 
     if (!fs.existsSync(indexFile) || !fs.existsSync(foldersFile)) {
@@ -108,6 +112,7 @@ async function updateServer(server) {
     const queue = server.roots.map(url => ({ url, depth: 0 }));
     const queued = new Set(server.roots);
     const visited = new Set();
+    const addedEntries = [];
     const started = Date.now();
     const stats = {
         server: server.id,
@@ -122,6 +127,8 @@ async function updateServer(server) {
         newDirectories: 0,
         changedDirectories: 0,
         newVideos: 0,
+        newMovies: 0,
+        newEpisodes: 0,
         rejectedVideos: 0,
         duplicateVideos: 0,
         dateBaselinesAdded: 0,
@@ -167,8 +174,11 @@ async function updateServer(server) {
                 const baselineFrontier =
                     dateBaselineAdded && current.depth < server.frontierDepth;
 
-                folders[entry.url] = { scanned: true, modified };
-
+                folders[entry.url] = {
+                    scanned: true,
+                    modified,
+                    lastIncrementalScan: Date.now()
+                };
                 if (isNew) stats.newDirectories++;
                 else if (dateBaselineAdded) stats.dateBaselinesAdded++;
                 else if (changed) stats.changedDirectories++;
@@ -201,9 +211,13 @@ async function updateServer(server) {
                 continue;
             }
 
+            const added = indexEntry(entry, meta);
             seen.add(entry.url);
-            index.push(indexEntry(entry, meta));
+            index.push(added);
+            addedEntries.push(added);
             stats.newVideos++;
+            if (added.type === "tv") stats.newEpisodes++;
+            else stats.newMovies++;
         }
     }
 
@@ -211,19 +225,31 @@ async function updateServer(server) {
     stats.durationMs = Date.now() - started;
     stats.finishedAt = new Date().toISOString();
 
-    stats.safeToWrite = stats.failures.length === 0;
+    // Incremental indexing is append-only. A failed directory does not damage
+    // existing data, so keep any new entries discovered from healthy roots.
+    stats.safeToWrite = stats.directoriesChecked > 0;
+    stats.partial = stats.failures.length > 0;
 
     if (!DRY_RUN && stats.safeToWrite) {
         atomicWriteJson(indexFile, index);
         atomicWriteJson(foldersFile, folders);
         atomicWriteJson(statsFile, stats);
+        atomicWriteJson(addedFile, addedEntries);
     }
 
-    console.log(`[CTG-${server.id}]`, stats);
+    console.log(
+        `[CTG-${server.id}] +${stats.newVideos} ` +
+        `(${stats.newMovies} movies, ${stats.newEpisodes} episodes) ` +
+        `[${stats.existingEntries} -> ${stats.finalEntries}]`
+    );
+    if (stats.failures.length) {
+        console.log(`[CTG-${server.id}] partial scan; failures: ${stats.failures.length}`);
+    }
     return stats;
 }
 
 (async () => {
+    const startedAt = Date.now();
     const results = [];
     for (const server of SERVERS.filter(
         candidate => !ONLY_SERVER || candidate.id === ONLY_SERVER
@@ -231,11 +257,42 @@ async function updateServer(server) {
         results.push(await updateServer(server));
     }
 
-    const failures = results.reduce(
-        (total, result) => total + result.failures.length,
-        0
-    );
-    if (failures > 0) process.exitCode = 1;
+    const summary = {
+        mode: "incremental",
+        dryRun: DRY_RUN,
+        serverFilter: ONLY_SERVER,
+        startedAt: new Date(startedAt).toISOString(),
+        finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAt,
+        totalNewVideos: results.reduce((sum, result) => sum + result.newVideos, 0),
+        totalNewMovies: results.reduce((sum, result) => sum + result.newMovies, 0),
+        totalNewEpisodes: results.reduce((sum, result) => sum + result.newEpisodes, 0),
+        totalFailures: results.reduce((sum, result) => sum + result.failures.length, 0),
+        servers: results
+    };
+
+    if (!DRY_RUN) {
+        atomicWriteJson(
+            path.join(CACHE_DIR, "incremental-summary.json"),
+            summary
+        );
+    }
+
+    console.log("\n================ CTG INCREMENTAL SUMMARY ================");
+    for (const result of results) {
+        console.log(
+            `Server ${result.server}: +${result.newVideos} ` +
+            `(${result.newMovies} movies, ${result.newEpisodes} episodes) ` +
+            `[${result.existingEntries} -> ${result.finalEntries}]`
+        );
+    }
+    console.log(`TOTAL NEW VIDEOS: ${summary.totalNewVideos}`);
+    console.log(`TOTAL NEW MOVIES: ${summary.totalNewMovies}`);
+    console.log(`TOTAL NEW EPISODES: ${summary.totalNewEpisodes}`);
+    console.log(`TOTAL FAILURES: ${summary.totalFailures}`);
+    console.log("=========================================================\n");
+
+    if (summary.totalFailures > 0) process.exitCode = 1;
 })().catch(error => {
     console.error(error);
     process.exitCode = 1;
