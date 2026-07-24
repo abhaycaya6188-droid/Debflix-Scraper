@@ -107,19 +107,48 @@ function inferPlayableStreamType(url, format) {
         : "Direct";
 }
 
-function movieBoxFileScore(file) {
-    const codec = String(file.codecName || file.codec || "").toLowerCase();
+function movieBoxCodecInfo(file) {
+    const video = String(file.codecName || file.codec || "").toLowerCase();
+    const audio = String(file.audioCodec || file.audio_codec || "").toLowerCase();
     const format = String(file.format || "").toLowerCase();
     const url = String(file.url || "").toLowerCase();
+
+    const isH264 = /h264|avc/.test(video);
+    const isHevc = /h265|hevc|x265/.test(video);
+    const isMp4 = format === "mp4" || /\.mp4(?:\?|$)/.test(url);
+    const isHls = format === "hls" || /\.m3u8(?:\?|$)/.test(url);
+    const hasSafeAudio = !audio || /aac|mp3|mpeg/.test(audio);
+    const hasRiskyAudio = /eac3|ec-3|ac3|ac-3|dts|truehd|opus|flac/.test(audio);
+
+    return {
+        video,
+        audio,
+        isH264,
+        isHevc,
+        isMp4,
+        isHls,
+        hasSafeAudio,
+        hasRiskyAudio,
+        browserFriendly: (isH264 && isMp4 && hasSafeAudio) || isHls,
+    };
+}
+
+function movieBoxFileScore(file) {
+    const info = movieBoxCodecInfo(file);
     let score = Number(file.resolution || 0);
 
-    // Chromium/Safari reliably support AVC/H.264 MP4. Prefer those over a
-    // nominally higher HEVC/unknown file that Android MPV can decode but the
-    // browser may reject with MEDIA_ERR_SRC_NOT_SUPPORTED.
-    if (/h264|avc/.test(codec)) score += 10_000;
-    if (/h265|hevc|x265/.test(codec)) score -= 10_000;
-    if (format === "mp4" || /\.mp4(?:\?|$)/.test(url)) score += 5_000;
-    if (format === "hls" || /\.m3u8(?:\?|$)/.test(url)) score += 4_000;
+    // A browser-compatible file must include both a supported video codec and
+    // a supported audio codec. H.264 video with AC3/EAC3/DTS still produces
+    // MEDIA_ELEMENT_ERROR code 4 in Chromium even though the video label says
+    // H264. Prefer complete AVC+AAC MP4 combinations first.
+    if (info.browserFriendly) score += 30_000;
+    if (info.isH264) score += 10_000;
+    if (info.isHevc) score -= 10_000;
+    if (info.isMp4) score += 5_000;
+    if (info.isHls) score += 4_000;
+    if (info.hasSafeAudio) score += 8_000;
+    if (info.hasRiskyAudio) score -= 15_000;
+
     return score;
 }
 
@@ -188,16 +217,13 @@ async function getStreams({ type, id, season, episode, title, year }) {
             "User-Agent": MOVIEBOX_USER_AGENT,
         };
 
-        // Return every full-length quality instead of only one file. Android
-        // can decode more containers/codecs than browsers; exposing alternates
-        // lets the web player fall back to a browser-compatible 720p/480p file
-        // without abandoning MovieBox entirely.
         return fullFiles.map((file, index) => {
             const resolution = Number(file.resolution || 0);
             const size = Number(file.size || 0);
+            const info = movieBoxCodecInfo(file);
             const codec = String(file.codecName || file.codec || "H264").toUpperCase();
+            const audio = String(file.audioCodec || file.audio_codec || "AAC").toUpperCase();
             const streamType = inferPlayableStreamType(file.url, file.format);
-            const browserFriendly = !/HEVC|H265|X265/i.test(codec);
 
             return {
                 id: `moviebox-web-${id}-${season || 0}-${episode || 0}-${file.id || index}`,
@@ -208,13 +234,13 @@ async function getStreams({ type, id, season, episode, title, year }) {
                 filename: `${mediaTitle} - ${resolution ? `${resolution}p` : "Auto"}`,
                 quality: resolution ? `${resolution}p` : "Auto",
                 codec,
-                audio: String(file.audioCodec || "AAC").toUpperCase(),
+                audio,
                 language: "Multi",
                 subtitles,
                 size: size ? `${(size / 1073741824).toFixed(2)} GB` : "Unknown",
                 streamType,
-                browserFriendly,
-                rawText: `Full file - ${Math.floor(Number(file.duration || 0) / 60)} min ${codec}`,
+                browserFriendly: info.browserFriendly,
+                rawText: `Full file - ${Math.floor(Number(file.duration || 0) / 60)} min ${codec}/${audio}`,
                 url: file.url,
                 proxyHeaders: playbackHeaders,
             };
