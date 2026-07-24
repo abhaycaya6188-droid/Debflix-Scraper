@@ -84,7 +84,6 @@ function search(engine, query) {
     // Allow both:
     // engine.search("Primitive War")
     // engine.search({ title: "Primitive War", ... })
-
     if (typeof query === "string") {
 
         query = {
@@ -97,50 +96,76 @@ function search(engine, query) {
 
     const wanted = normalize(query.title);
 
+    const wantedType =
+        query.type === "tv"
+            ? "tv"
+            : query.type === "movie"
+                ? "movie"
+                : null;
+
     let candidates = null;
 
-/* TV lookup */
-if (
-    query.type === "tv" &&
-    query.season != null &&
-    query.episode != null &&
-    engine.tvMap
-) {
+    /* TV lookup */
+    if (
+        wantedType === "tv" &&
+        query.season != null &&
+        query.episode != null &&
+        engine.tvMap
+    ) {
 
-    const key =
-        `${wanted}|${Number(query.season)}|${Number(query.episode)}`;
-        console.log("[SEARCH]", key);
+        const key =
+            `${wanted}|${Number(query.season)}|${Number(query.episode)}`;
 
-    if (engine.tvMap.has(key)) {
+        if (engine.tvMap.has(key)) {
 
-        candidates =
-            engine.tvMap.get(key);
+            candidates =
+                engine.tvMap.get(key);
+
+        }
 
     }
 
-}
+    /* Movie lookup */
+    if (
+        !candidates &&
+        wantedType !== "tv" &&
+        engine.movieMap &&
+        engine.movieMap.has(wanted)
+    ) {
 
-/* Movie lookup */
-if (
-    !candidates &&
-    engine.movieMap &&
-    engine.movieMap.has(wanted)
-) {
+        candidates =
+            engine.movieMap.get(wanted);
 
-    candidates =
-        engine.movieMap.get(wanted);
+    }
 
-}
+    /* Fallback */
+    if (!candidates) {
 
-/* Fallback */
-if (!candidates) {
+        candidates =
+            engine.index;
 
-    candidates =
-        engine.index;
-
-}
+    }
 
     for (const entry of candidates) {
+
+        // Never allow movie requests to return episodes, or TV requests
+        // to return movie files with the same normalized title.
+        if (
+            wantedType &&
+            entry.type !== wantedType
+        ) {
+            continue;
+        }
+
+        if (
+            wantedType === "tv" &&
+            (
+                Number(entry.season) !== Number(query.season) ||
+                Number(entry.episode) !== Number(query.episode)
+            )
+        ) {
+            continue;
+        }
 
         const s =
             score(entry, query);
@@ -160,7 +185,7 @@ if (!candidates) {
 
     results.sort((a, b) => b.score - a.score);
 
-return results.slice(0, 25);
+    return results.slice(0, 25);
 
 }
 
