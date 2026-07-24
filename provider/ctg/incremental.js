@@ -57,6 +57,7 @@ function createStats(server, beforeCount) {
     started: Date.now(),
     beforeCount,
     afterCount: beforeCount,
+    rootsScanned: 0,
     foldersVisited: 0,
     filesSeen: 0,
     videoFilesSeen: 0,
@@ -87,6 +88,13 @@ async function runIncremental(config) {
   const addedUrls = new Set();
   const added = [];
   const stats = createStats(config.name, index.length);
+  const roots = (config.roots || [config.root])
+    .map(root => typeof root === "string" ? root : root?.url)
+    .filter(Boolean);
+
+  if (!roots.length) {
+    throw new Error(`No roots configured for ${config.name}`);
+  }
 
   async function visit(entry) {
     stats.filesSeen++;
@@ -142,10 +150,14 @@ async function runIncremental(config) {
 
   console.log(`\n========== CTG INCREMENTAL ${config.name} ==========`);
   console.log(`Existing index: ${index.length}`);
-  console.log(`Root: ${config.root}`);
+  console.log(`Roots: ${roots.length}`);
 
   try {
-    await crawler.crawlQueue(config.root, visit);
+    for (const root of roots) {
+      console.log(`[CTG-INCREMENTAL:${config.name}] Scanning ${root}`);
+      await crawler.crawlQueue(root, visit);
+      stats.rootsScanned++;
+    }
   } catch (error) {
     stats.failures++;
     stats.error = error.message;
